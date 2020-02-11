@@ -1,5 +1,5 @@
-ROOT = '(Type here)'
-DSPRITESPATH = '(Type here)'
+ROOT = '/share2/xqzhu/repo_results/DisentanglementICML19/Results_dsprites/'
+DSPRITESPATH = '/share2/xqzhu/disentangle_datasets/dsprites/'
 
 import os
 import sys

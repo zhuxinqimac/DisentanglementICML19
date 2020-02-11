@@ -243,3 +243,10 @@ TSWLatexianTemp*
 
 main.pdf
 supp.pdf
+
+# xinqi ignore files
+run_*.sh
+*.pyc
+.*.pyc
+*.swp
+.*.swp

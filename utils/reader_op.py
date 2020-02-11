@@ -53,3 +53,8 @@ def read_npy(path, encoding='ASCII'):
     print("Npy is read from %s"%path)
     npy_content = np.load(path, encoding=encoding)
     return npy_content
+
+def read_npy_py3(path):
+    print("Npy (py3) is read from %s"%path)
+    npy_content = np.load(path, allow_pickle=True)
+    return npy_content
