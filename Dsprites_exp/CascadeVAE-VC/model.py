@@ -74,7 +74,7 @@ class Model(ModelPlugin):
         # self.I_loss = tf.reduce_mean(tf.reduce_sum(self.z_delta * tf.log(self.disc_prob + 1e-12), axis=1))
         # self.I_loss = - self.args.C_lambda * self.I_loss
         # Loss VC MSEloss
-        self.I_loss = tf.reduce_sum((self.disc_output - self.delta_target) ** 2, axis=1)
+        self.I_loss = tf.reduce_mean(tf.reduce_sum((self.disc_output - self.delta_target) ** 2, axis=1))
         self.I_loss = self.args.C_lambda * self.I_loss
 
         # Unary vector
