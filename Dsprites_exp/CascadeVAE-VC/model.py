@@ -36,6 +36,8 @@ class Model(ModelPlugin):
         self.epsilon_input = tf.placeholder(tf.float32, shape=[self.args.nbatch, self.args.nconti])
         self.objective = tf.placeholder(tf.float32, shape = [self.args.nbatch, self.args.ncat])
         self.istrain = tf.placeholder(tf.bool, shape= [])
+        self.I_weight = tf.placeholder(tf.float32, shape = [])
+        self.F_weight = tf.placeholder(tf.float32, shape = [])
 
         # For VC-Loss
         self.delta_dim = tf.placeholder(tf.int32, shape=[self.args.nbatch])
@@ -87,7 +89,8 @@ class Model(ModelPlugin):
         for idx in range(self.args.nconti+1):
             weight = tf.constant(np.array(idx*[self.args.beta_min] + (self.args.nconti-idx)*[self.args.beta_max]), dtype=tf.float32)
             kl_cost = vae_kl_cost_weight(mean=self.mean_total, stddev=self.stddev_total, weight=weight)
-            self.loss_dict[idx] = self.rec_cost+kl_cost+tf.losses.get_regularization_loss()+self.I_loss+self.F_loss
+            self.loss_dict[idx] = self.rec_cost+kl_cost+tf.losses.get_regularization_loss()+\
+                    self.I_loss*self.I_weight+self.F_loss*self.F_weight
 
         tf.summary.scalar('rec_loss', self.rec_cost)
         tf.summary.scalar('I_loss', self.I_loss)
@@ -138,12 +141,16 @@ class Model(ModelPlugin):
 
         if train_idx<self.args.ntime:
             feed_dict[self.objective] = np.zeros([self.args.nbatch, self.args.ncat])
+            feed_dict[self.I_weight] = 0.
+            feed_dict[self.F_weight] = 0.
         else:
             unary = np.zeros([self.args.nbatch, self.args.ncat])
             for idx in range(self.args.ncat):
                 feed_dict[self.objective] = np.tile(np.reshape(np.eye(self.args.ncat)[idx], [1,-1]), [self.args.nbatch, 1])
                 unary[:,idx] = self.sess.run(self.rec_cost_vector, feed_dict=feed_dict)
             feed_dict[self.objective] = self.mcf.solve(-unary)[1]
+            feed_dict[self.I_weight] = 1.
+            feed_dict[self.F_weight] = 1.
 
         if train_idx>=self.args.ntime:
             idx = min(train_idx, self.args.nconti)
