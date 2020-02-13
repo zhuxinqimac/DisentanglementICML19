@@ -56,7 +56,8 @@ class Model(ModelPlugin):
         # For VC-Loss
         self.z_delta = tf.cast(tf.one_hot(self.delta_dim, self.args.nconti), self.z_sample.dtype)
         rand_eps = tf.random.normal([self.args.nbatch, 1], mean=0.0, stddev=2.0)
-        self.z_added = self.z_delta * rand_eps
+        self.delta_target = self.z_delta * rand_eps
+        self.z_added = self.delta_target
         self.z_added = self.z_added + self.z_sample
 
         self.dec_output_dict = self.decoder_net(z=tf.concat([self.z_sample, self.objective], axis=-1), output_channel=self.nchannel, scope="decoder", reuse=False)
@@ -68,10 +69,13 @@ class Model(ModelPlugin):
         self.dec_output_2 = self.decoder_net(z=tf.concat([self.z_added, self.objective], axis=-1), output_channel=self.nchannel, scope="decoder", reuse=True)['output']
         self.disc_output = self.disc_net(img1=self.dec_output, img2=self.dec_output_2, target_dim=self.args.nconti, scope='discriminator', reuse=False)['output']
 
-        # Loss VC
-        self.disc_prob = tf.nn.softmax(self.disc_output, axis=1)
-        self.I_loss = tf.reduce_mean(tf.reduce_sum(self.z_delta * tf.log(self.disc_prob + 1e-12), axis=1))
-        self.I_loss = - self.args.C_lambda * self.I_loss
+        # Loss VC CEloss
+        # self.disc_prob = tf.nn.softmax(self.disc_output, axis=1)
+        # self.I_loss = tf.reduce_mean(tf.reduce_sum(self.z_delta * tf.log(self.disc_prob + 1e-12), axis=1))
+        # self.I_loss = - self.args.C_lambda * self.I_loss
+        # Loss VC MSEloss
+        self.I_loss = tf.reduce_sum((self.disc_output - self.delta_target) ** 2, axis=1)
+        self.I_loss = self.args.C_lambda * self.I_loss
 
         # Unary vector
         self.rec_cost_vector = sigmoid_cross_entropy_without_mean(labels=self.input1, logits=self.dec_output)
