@@ -41,6 +41,7 @@ class Model(ModelPlugin):
 
         # For VC-Loss
         self.delta_dim = tf.placeholder(tf.int32, shape=[self.args.nbatch])
+        self.objective_2_idx = tf.placeholder(tf.int32, shape = [self.args.nbatch])
 
         self.generate_sess()
 
@@ -68,7 +69,8 @@ class Model(ModelPlugin):
         self.F_loss = tf.reduce_mean(self.feat_output * self.feat_output)
         self.F_loss = self.args.F_beta * self.F_loss
 
-        self.dec_output_2 = self.decoder_net(z=tf.concat([self.z_added, self.objective], axis=-1), output_channel=self.nchannel, scope="decoder", reuse=True)['output']
+        self.objective_2 = tf.cast(tf.one_hot(self.objective_2_idx, self.args.ncat), self.z_added.dtype)
+        self.dec_output_2 = self.decoder_net(z=tf.concat([self.z_added, self.objective_2], axis=-1), output_channel=self.nchannel, scope="decoder", reuse=True)['output']
         self.disc_output = self.disc_net(img1=self.dec_output, img2=self.dec_output_2, target_dim=self.args.nconti, scope='discriminator', reuse=False)['output']
 
         # Loss VC CEloss
@@ -138,6 +140,7 @@ class Model(ModelPlugin):
 
         # For VC-Loss
         feed_dict[self.delta_dim] = np.random.randint(0, self.args.nconti, size=[self.args.nbatch])
+        feed_dict[self.objective_2_idx] = np.random.randint(0, self.args.ncat, size=[self.args.nbatch])
 
         if train_idx<self.args.ntime:
             feed_dict[self.objective] = np.zeros([self.args.nbatch, self.args.ncat])
