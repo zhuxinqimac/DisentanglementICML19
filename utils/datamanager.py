@@ -136,4 +136,4 @@ class Shapes3DManager(DatamanagerPlugin):
         # ims = (ims / 255.).astype(np.float32)
         # return ims.reshape([batch_size, 64, 64, 3]), None
         # return self.image[subidx], self.latents_classes[subidx]
-        return (self.image[subidx]).astype(float), None
+        return (self.image[subidx] / 255.).astype(float), None
