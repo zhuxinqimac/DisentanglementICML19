@@ -6,10 +6,10 @@ from model import Model
 
 from config.path import subdirs5resultdir, muldir2mulsubdir
 
-from utils.datasetmanager import dsprites_manager
+from utils.datasetmanager import dsprites_manager, shapes_3d_manager
 from utils.format_op import FileIdManager
 
-from local_config import local_dsprites_parser, RESULT_DIR, ID_STRUCTURE
+from local_config import local_dsprites_parser, ID_STRUCTURE, KEY
 
 import tensorflow as tf
 import numpy as np
@@ -22,6 +22,13 @@ if __name__ == '__main__':
     parser = local_dsprites_parser()
     args = parser.parse_args() # parameter required for model
 
+    ROOT_DIRS = {
+            'dsprites': '/share2/xqzhu/repo_results/DisentanglementICML19/Results_dsprites/',
+            '3dshapes': '/share2/xqzhu/repo_results/DisentanglementICML19/Results_3dshapes/'
+            }
+    ROOT = ROOT_DIRS[args.dataset]
+    RESULT_DIR = ROOT+'{}/'.format(KEY)
+
     fim = FileIdManager(ID_STRUCTURE)
 
     np.random.seed(args.rseed)
@@ -29,7 +36,10 @@ if __name__ == '__main__':
     SAVE_DIR, LOG_DIR, ASSET_DIR = subdirs5resultdir(RESULT_DIR, True)
     SAVE_SUBDIR, ASSET_SUBDIR = muldir2mulsubdir([SAVE_DIR, ASSET_DIR], FILE_ID, True)
 
-    dm = dsprites_manager()
+    if args.dataset == 'dsprites':
+        dm = dsprites_manager()
+    else:
+        dm = shapes_3d_manager()
     dm.print_shape()
 
     model = Model(dm, LOG_DIR+FILE_ID+'.log', args)
