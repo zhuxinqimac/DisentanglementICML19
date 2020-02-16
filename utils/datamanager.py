@@ -57,7 +57,7 @@ class DspritesManager(DatamanagerPlugin):
 
 class Shapes3DManager(DatamanagerPlugin):
     def __init__(self, dataset_zip):
-        self.image = (dataset_zip['images'][:] / 255.).astype(np.float32)  # array shape [480000,64,64,3], uint8 in range(256)
+        self.image = dataset_zip['images'][:]  # array shape [480000,64,64,3], uint8 in range(256)
         self.latents_classes = dataset_zip['labels']  # array shape [480000,6], float64
         self.nlatent = self.latents_classes.shape[1]
         self.latents_sizes = np.array([10, 10, 10, 8, 4, 15]).astype(np.int32)
@@ -118,7 +118,7 @@ class Shapes3DManager(DatamanagerPlugin):
         # ims = np.stack(ims, axis=0)
         # ims = (ims / 255.).astype(np.float32)
         # return ims.reshape([batch_size, 64, 64, 3])
-        return self.image[indices]
+        return (self.image[indices] / 255.).astype(float)
 
     def next_batch_latent_fix_idx(self, batch_size, latent_idx, latent_value): 
         samples = self.next_batch_latent_random(batch_size)
@@ -136,4 +136,4 @@ class Shapes3DManager(DatamanagerPlugin):
         # ims = (ims / 255.).astype(np.float32)
         # return ims.reshape([batch_size, 64, 64, 3]), None
         # return self.image[subidx], self.latents_classes[subidx]
-        return self.image[subidx], None
+        return (self.image[subidx]).astype(float), None
