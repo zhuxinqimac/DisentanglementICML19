@@ -98,7 +98,7 @@ class Shapes3DManager(DatamanagerPlugin):
         for factor, name in reversed(list(enumerate(self._FACTORS_IN_ORDER))):
             indices += latents[:, factor] * base
             base *= self._NUM_VALUES_PER_FACTOR[name]
-        return indices
+        return indices.astype(int)
 
     def next_batch_latent_random(self, batch_size):
         samples = np.zeros([batch_size, self.nlatent])
