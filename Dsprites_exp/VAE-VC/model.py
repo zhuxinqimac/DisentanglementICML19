@@ -87,12 +87,10 @@ class Model(ModelPlugin):
         # Loss
         self.rec_cost = tf.reduce_mean(self.rec_cost_vector)
 
-        self.loss_dict = dict()
-        for idx in range(self.args.nconti+1):
-            weight = tf.constant(np.array(idx*[self.args.beta_min] + (self.args.nconti-idx)*[self.args.beta_max]), dtype=tf.float32)
-            kl_cost = vae_kl_cost_weight(mean=self.mean_total, stddev=self.stddev_total, weight=weight)
-            self.loss_dict[idx] = self.rec_cost+kl_cost+tf.losses.get_regularization_loss()+\
-                    self.I_loss*self.I_weight+self.F_loss*self.F_weight
+        weight = tf.constant(np.array(self.args.nconti*[self.args.beta_max]), dtype=tf.float32)
+        kl_cost = vae_kl_cost_weight(mean=self.mean_total, stddev=self.stddev_total, weight=weight)
+        self.loss = self.rec_cost+kl_cost+tf.losses.get_regularization_loss()+\
+                self.I_loss*self.I_weight+self.F_loss*self.F_weight
 
         tf.summary.scalar('rec_loss', self.rec_cost)
         tf.summary.scalar('I_loss', self.I_loss)
@@ -125,10 +123,8 @@ class Model(ModelPlugin):
                 [v for v in tf.trainable_variables() if 'decoder' in v.name] + \
                 [v for v in tf.trainable_variables() if 'discriminator' in v.name]
 
-        self.train_op_dict = dict()
         with tf.control_dependencies(tf.get_collection("update_ops")):
-            for idx in range(self.args.nconti+1):
-                self.train_op_dict[idx] = get_train_op_v2(tf.train.AdamOptimizer(learning_rate=self.lr, beta1=0.9, beta2=0.999), loss=self.loss_dict[idx], var_list=var_list)
+            self.train_op = get_train_op_v2(tf.train.AdamOptimizer(learning_rate=self.lr, beta1=0.9, beta2=0.999), loss=self.loss, var_list=var_list)
 
         self.logger.info("Model setting up train ends")
 
@@ -155,13 +151,7 @@ class Model(ModelPlugin):
             feed_dict[self.I_weight] = 1.
             feed_dict[self.F_weight] = 1.
 
-        if train_idx>=self.args.ntime:
-            idx = min(train_idx, self.args.nconti)
-        else: 
-            idx = min(train_idx+1, self.args.nconti)
-        # _, total_loss, rec_loss, I_loss, F_loss = self.sess.run([self.train_op_dict[idx], 
-            # self.loss_dict[idx], self.rec_cost, self.I_loss, self.F_loss], feed_dict=feed_dict)
-        summary, _ = self.sess.run([self.merged, self.train_op_dict[idx]], feed_dict=feed_dict)
+        summary, _ = self.sess.run([self.merged, self.train_op], feed_dict=feed_dict)
         return summary
 
     def train(self, niter, piter, siter, save_dir=None, asset_dir=None):
