@@ -5,11 +5,11 @@ sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), '../..'
 from config.path import ROOT
 from config.parser import dsprites_parser
 
-KEY = 'CascadeVAE-VC'
+KEY = 'VAE-VC'
 RESULT_DIR = ROOT+'{}/'.format(KEY)
 ID_STRUCTURE_DICT = {
-        'CascadeVAE-VC' : ('nbatch', 'nconti', 'ncat', 'ntime', 'plamb', 
-            'beta_min', 'beta_max', 'dptype', 'C_lambda', 'F_beta', 'rseed'),
+        'VAE-VC' : ('nbatch', 'nconti', 'ncat', 'ntime', 'plamb', 
+            'beta_max', 'dptype', 'C_lambda', 'F_beta', 'rseed'),
         }
 ID_STRUCTURE = ID_STRUCTURE_DICT[KEY]
 
