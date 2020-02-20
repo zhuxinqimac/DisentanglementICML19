@@ -199,9 +199,9 @@ class Model(ModelPlugin):
             if (iter_+1)%siter==0 or iter_+1==final_iter:
                 if self.args.use_discrete:
                     include_discrete = False if train_idx < self.args.ntime else True
-                    accuracy = self.evaluate(include_discrete=include_discrete)
                 else:
-                    accuracy = self.evaluate(include_discrete=False)
+                    include_discrete = False
+                accuracy = self.evaluate(include_discrete=include_discrete)
 
                 self.latent_traversal_gif(path=asset_dir+'{}.gif'.format(iter_+1), include_discrete=include_discrete)
                 if max_accuracy==-1 or max_accuracy<accuracy:
