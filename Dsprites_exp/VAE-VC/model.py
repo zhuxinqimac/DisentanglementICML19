@@ -171,8 +171,8 @@ class Model(ModelPlugin):
             # no discrete
             feed_dict[self.objective] = np.zeros([self.args.nbatch, self.args.ncat])
             if train_idx<self.args.ntime:
-                feed_dict[self.I_weight] = 0.
-                feed_dict[self.F_weight] = 0.
+                feed_dict[self.I_weight] = 1.
+                feed_dict[self.F_weight] = 1.
             else:
                 feed_dict[self.I_weight] = 1.
                 feed_dict[self.F_weight] = 1.
