@@ -28,5 +28,6 @@ def local_dsprites_parser():
     parser.add_argument("--F_beta", default = 0, help="Beta of feature map loss for VC model", type = float)
     parser.add_argument("--use_discrete", action="store_true", help="Use SolveMaxMatching to handle discrete variables")
     parser.add_argument("--delta_type", help="Delta type for VC loss", type=str, default='fulldim', choices=['fulldim', 'onedim'])
+    parser.add_argument("--vc_epsilon", default = 1, help="Epsilon used for vc loss", type = float)
     return parser
 

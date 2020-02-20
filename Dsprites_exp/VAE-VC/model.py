@@ -71,7 +71,7 @@ class Model(ModelPlugin):
         elif self.args.delta_type == 'fulldim':
             # C_delta_latents = tf.random.uniform([minibatch_size, C_global_size], minval=0, maxval=1.0, dtype=latents.dtype)
             self.delta_target = tf.random.uniform([self.args.nbatch, self.args.nconti], minval=0, maxval=1.0, dtype=self.z_sample.dtype)
-            self.z_added = (self.delta_target - 0.5) * self.args.epsilon
+            self.z_added = (self.delta_target - 0.5) * self.args.vc_epsilon
             self.z_added = self.z_added + self.z_sample
 
         self.dec_output_dict = self.decoder_net(z=tf.concat([self.z_sample, self.objective], axis=-1), output_channel=self.nchannel, scope="decoder", reuse=False)
