@@ -41,7 +41,10 @@ class Model(ModelPlugin):
 
         # For VC-Loss
         self.delta_dim = tf.placeholder(tf.int32, shape=[self.args.nbatch])
-        self.objective_2_idx = tf.placeholder(tf.int32, shape = [self.args.nbatch])
+        if self.args.use_discrete:
+            self.objective_2_idx = tf.placeholder(tf.int32, shape = [self.args.nbatch])
+        else:
+            self.objective_2 = tf.placeholder(tf.float32, shape = [self.args.nbatch, self.args.ncat])
 
         self.generate_sess()
 
@@ -57,11 +60,19 @@ class Model(ModelPlugin):
         self.z_sample = tf.add(self.mean_total, tf.multiply(self.stddev_total, self.epsilon_input))
 
         # For VC-Loss
-        self.z_delta = tf.cast(tf.one_hot(self.delta_dim, self.args.nconti), self.z_sample.dtype)
-        rand_eps = tf.random.normal([self.args.nbatch, 1], mean=0.0, stddev=2.0)
-        self.delta_target = self.z_delta * rand_eps
-        self.z_added = self.delta_target
-        self.z_added = self.z_added + self.z_sample
+        if self.args.delta_type == 'onedim':
+            # C_delta_latents = tf.random.uniform([minibatch_size], minval=0, maxval=C_global_size, dtype=tf.int32)
+            # C_delta_latents = tf.cast(tf.one_hot(C_delta_latents, C_global_size), latents.dtype)
+            self.z_delta = tf.cast(tf.one_hot(self.delta_dim, self.args.nconti), self.z_sample.dtype)
+            rand_eps = tf.random.normal([self.args.nbatch, 1], mean=0.0, stddev=2.0)
+            self.delta_target = self.z_delta * rand_eps
+            self.z_added = self.delta_target
+            self.z_added = self.z_added + self.z_sample
+        elif self.args.delta_type == 'fulldim':
+            # C_delta_latents = tf.random.uniform([minibatch_size, C_global_size], minval=0, maxval=1.0, dtype=latents.dtype)
+            self.delta_target = tf.random.uniform([self.args.nbatch, self.args.nconti], minval=0, maxval=1.0, dtype=self.z_sample.dtype)
+            self.z_added = (self.delta_target - 0.5) * self.args.epsilon
+            self.z_added = self.z_added + self.z_sample
 
         self.dec_output_dict = self.decoder_net(z=tf.concat([self.z_sample, self.objective], axis=-1), output_channel=self.nchannel, scope="decoder", reuse=False)
         self.dec_output = self.dec_output_dict['output']
@@ -69,17 +80,20 @@ class Model(ModelPlugin):
         self.F_loss = tf.reduce_mean(self.feat_output * self.feat_output)
         self.F_loss = self.args.F_beta * self.F_loss
 
-        self.objective_2 = tf.cast(tf.one_hot(self.objective_2_idx, self.args.ncat), self.z_added.dtype)
+        if self.args.use_discrete:
+            self.objective_2 = tf.cast(tf.one_hot(self.objective_2_idx, self.args.ncat), self.z_added.dtype)
         self.dec_output_2 = self.decoder_net(z=tf.concat([self.z_added, self.objective_2], axis=-1), output_channel=self.nchannel, scope="decoder", reuse=True)['output']
         self.disc_output = self.disc_net(img1=self.dec_output, img2=self.dec_output_2, target_dim=self.args.nconti, scope='discriminator', reuse=False)['output']
 
-        # Loss VC CEloss
-        # self.disc_prob = tf.nn.softmax(self.disc_output, axis=1)
-        # self.I_loss = tf.reduce_mean(tf.reduce_sum(self.z_delta * tf.log(self.disc_prob + 1e-12), axis=1))
-        # self.I_loss = - self.args.C_lambda * self.I_loss
-        # Loss VC MSEloss
-        self.I_loss = tf.reduce_mean(tf.reduce_sum((self.disc_output - self.delta_target) ** 2, axis=1))
-        self.I_loss = self.args.C_lambda * self.I_loss
+        if self.args.delta_type == 'onedim':
+            # Loss VC CEloss
+            self.disc_prob = tf.nn.softmax(self.disc_output, axis=1)
+            self.I_loss = tf.reduce_mean(tf.reduce_sum(self.z_delta * tf.log(self.disc_prob + 1e-12), axis=1))
+            self.I_loss = - self.args.C_lambda * self.I_loss
+        elif self.args.delta_type == 'fulldim':
+            # Loss VC MSEloss
+            self.I_loss = tf.reduce_mean(tf.reduce_sum((tf.nn.sigmoid(self.disc_output) - self.delta_target) ** 2, axis=1))
+            self.I_loss = self.args.C_lambda * self.I_loss
 
         # Unary vector
         self.rec_cost_vector = sigmoid_cross_entropy_without_mean(labels=self.input1, logits=self.dec_output)
@@ -136,20 +150,32 @@ class Model(ModelPlugin):
 
         # For VC-Loss
         feed_dict[self.delta_dim] = np.random.randint(0, self.args.nconti, size=[self.args.nbatch])
-        feed_dict[self.objective_2_idx] = np.random.randint(0, self.args.ncat, size=[self.args.nbatch])
+        # feed_dict[self.objective_2_idx] = np.random.randint(0, self.args.ncat, size=[self.args.nbatch])
+        feed_dict[self.objective_2] = np.zeros([self.args.nbatch, self.args.ncat])
 
-        if train_idx<self.args.ntime:
-            feed_dict[self.objective] = np.zeros([self.args.nbatch, self.args.ncat])
-            feed_dict[self.I_weight] = 1.
-            feed_dict[self.F_weight] = 1.
+        if self.args.use_discrete:
+            # with discrete
+            if train_idx<self.args.ntime:
+                feed_dict[self.objective] = np.zeros([self.args.nbatch, self.args.ncat])
+                feed_dict[self.I_weight] = 1.
+                feed_dict[self.F_weight] = 1.
+            else:
+                unary = np.zeros([self.args.nbatch, self.args.ncat])
+                for idx in range(self.args.ncat):
+                    feed_dict[self.objective] = np.tile(np.reshape(np.eye(self.args.ncat)[idx], [1,-1]), [self.args.nbatch, 1])
+                    unary[:,idx] = self.sess.run(self.rec_cost_vector, feed_dict=feed_dict)
+                feed_dict[self.objective] = self.mcf.solve(-unary)[1]
+                feed_dict[self.I_weight] = 1.
+                feed_dict[self.F_weight] = 1.
         else:
-            unary = np.zeros([self.args.nbatch, self.args.ncat])
-            for idx in range(self.args.ncat):
-                feed_dict[self.objective] = np.tile(np.reshape(np.eye(self.args.ncat)[idx], [1,-1]), [self.args.nbatch, 1])
-                unary[:,idx] = self.sess.run(self.rec_cost_vector, feed_dict=feed_dict)
-            feed_dict[self.objective] = self.mcf.solve(-unary)[1]
-            feed_dict[self.I_weight] = 1.
-            feed_dict[self.F_weight] = 1.
+            # no discrete
+            feed_dict[self.objective] = np.zeros([self.args.nbatch, self.args.ncat])
+            if train_idx<self.args.ntime:
+                feed_dict[self.I_weight] = 0.
+                feed_dict[self.F_weight] = 0.
+            else:
+                feed_dict[self.I_weight] = 1.
+                feed_dict[self.F_weight] = 1.
 
         summary, _ = self.sess.run([self.merged, self.train_op], feed_dict=feed_dict)
         return summary
@@ -171,8 +197,11 @@ class Model(ModelPlugin):
             train_summary_writer.add_summary(summary, iter_)
 
             if (iter_+1)%siter==0 or iter_+1==final_iter:
-                include_discrete = False if train_idx < self.args.ntime else True
-                accuracy = self.evaluate(include_discrete=include_discrete)
+                if self.args.use_discrete:
+                    include_discrete = False if train_idx < self.args.ntime else True
+                    accuracy = self.evaluate(include_discrete=include_discrete)
+                else:
+                    accuracy = self.evaluate(include_discrete=False)
 
                 self.latent_traversal_gif(path=asset_dir+'{}.gif'.format(iter_+1), include_discrete=include_discrete)
                 if max_accuracy==-1 or max_accuracy<accuracy:

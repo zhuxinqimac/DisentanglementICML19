@@ -26,5 +26,7 @@ def local_dsprites_parser():
     parser.add_argument("--ntime", default = 4, help="When does discrete variable to be learned", type = int)
     parser.add_argument("--C_lambda", default = 1, help="Continuous lambda for VC model", type = float)
     parser.add_argument("--F_beta", default = 0, help="Beta of feature map loss for VC model", type = float)
+    parser.add_argument("--use_discrete", action="store_true", help="Use SolveMaxMatching to handle discrete variables")
+    parser.add_argument("--delta_type", help="Delta type for VC loss", type=str, default='fulldim', choices=['fulldim', 'onedim'])
     return parser
 
