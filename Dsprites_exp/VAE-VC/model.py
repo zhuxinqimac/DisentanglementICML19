@@ -256,19 +256,19 @@ class Model(ModelPlugin):
                 gif.append(matrix_image2big_image(np.expand_dims(self.decode(latent_input=np.concatenate([latent_conti, np.tile(np.expand_dims(latent_cat, axis=0), [self.args.nconti,1])], axis=1)), axis=0)))
         write_gif(content=gif, path=path)
 
-    def generate_image_pairs(self, asset_dir, n_pairs, include_discrete=True):
-        n_rounds = n_pairs // self.args.nbatch
+    def generate_image_pairs(self, batch_size, asset_dir, n_pairs, include_discrete=True):
+        n_rounds = n_pairs // batch_size
         pairs_path = os.path.join(asset_dir, 'pairs_dataset')
         if not os.path.exists(pairs_path):
             os.makedirs(pairs_path)
         for i in range(n_rounds):
-            # z_1 = np.random.normal(size=[self.args.nbatch, self.args.nconti])
-            # z_2 = np.random.normal(size=[self.args.nbatch, self.args.nconti])
-            z_1 = np.random.uniform(low=-2, high=2, size=[self.args.nbatch, self.args.nconti])
-            z_2 = np.random.uniform(low=-2, high=2, size=[self.args.nbatch, self.args.nconti])
-            if self.latent_type == 'onedim':
-                delta_dim = np.random.randint(0, self,args.nconti, size=[self.args.nbatch])
-                delta_onehot = np.zeros((self.args.nbatch, self.args.nconti))
+            # z_1 = np.random.normal(size=[batch_size, self.args.nconti])
+            # z_2 = np.random.normal(size=[batch_size, self.args.nconti])
+            z_1 = np.random.uniform(low=-2, high=2, size=[batch_size, self.args.nconti])
+            z_2 = np.random.uniform(low=-2, high=2, size=[batch_size, self.args.nconti])
+            if self.args.latent_type == 'onedim':
+                delta_dim = np.random.randint(0, self.args.nconti, size=[batch_size])
+                delta_onehot = np.zeros((batch_size, self.args.nconti))
                 delta_onehot[np.arange(delta_dim.size), delta_dim] = 1
                 z_2 = np.where(delta_onehot > 0, z_2, z_1)
             delta_z = z_1 - z_2
@@ -278,22 +278,29 @@ class Model(ModelPlugin):
                 labels = np.concatenate([labels, delta_z], axis=0)
 
             if include_discrete:
-                cat_dim = np.random.randint(0, self,args.ncat, size=[self.args.nbatch])
-                cat_onehot = np.zeros((self.args.nbatch, self.args.ncat))
+                cat_dim = np.random.randint(0, self.args.ncat, size=[batch_size])
+                cat_onehot = np.zeros((batch_size, self.args.ncat))
                 cat_onehot[np.arange(cat_dim.size), cat_dim] = 1
             else:
-                cat_onehot = np.zeros((self.args.nbatch, self.args.ncat))
-            img_1 = tf.run(self.free_dec_output_ph, 
+                cat_onehot = np.zeros((batch_size, self.args.ncat))
+            img_1 = self.sess.run(self.free_dec_output_ph, 
                     feed_dict={self.free_latent_ph: 
                         np.concatenate([z_1, cat_onehot], axis=1)})
-            img_2 = tf.run(self.free_dec_output_ph, 
+            img_2 = self.sess.run(self.free_dec_output_ph, 
                     feed_dict={self.free_latent_ph: 
                         np.concatenate([z_2, cat_onehot], axis=1)})
             # [b, h, w, c]
-            for i in range(img_1.shape[0]):
-                pair_np = np.concatenate([img_1[i], img_2[i]], axis=1)
+            for j in range(img_1.shape[0]):
+                pair_np = np.concatenate([img_1[j], img_2[j]], axis=1)
                 pair_np = (pair_np * 255).astype(np.uint8)
                 img = Image.fromarray(pair_np)
-                img.save(os.path.join(pairs_path, 'pair_%05d.jpg' % i))
+                img.save(os.path.join(pairs_path, 'pair_%06d.jpg' % (i * batch_size + j)))
+            # if i == 0:
+                # imgs = np.concatenate([img_1, img_2], axis=2)
+            # else:
+                # imgs_i = np.concatenate([img_1, img_2], axis=2)
+                # imgs = np.concatenate([imgs, imgs_i], axis=0)
 
         write_npy(labels, os.path.join(pairs_path, 'labels.npy'))
+        # write_npy((imgs * 255).astype(np.uint8), os.path.join(pairs_path, 'imgs.npy'))
+        # np.savez_compressed(os.path.join(pairs_path, 'imgs.npy'), (imgs * 255).astype(np.uint8))
