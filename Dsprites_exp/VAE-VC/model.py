@@ -1,12 +1,13 @@
 import os
 import sys
 import datetime
+from PIL import Image
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), '../..'))
 
 from utils.general_class import ModelPlugin
 from utils.ortools_op import SolveMaxMatching
 from utils.visual_op import matrix_image2big_image
-from utils.writer_op import write_pkl, write_gif
+from utils.writer_op import write_pkl, write_gif, write_npy
 from utils.tqdm_op import tqdm_range
 from utils.eval_op import DisentanglemetricFactorMask, DisentanglemetricFactorJointMask
 from utils.np_op import np_softmax
@@ -114,6 +115,10 @@ class Model(ModelPlugin):
         # Decode
         self.latent_ph = tf.placeholder(tf.float32, shape = [self.args.nbatch, self.args.nconti+self.args.ncat])
         self.dec_output_ph = tf.nn.sigmoid(self.decoder_net(z=self.latent_ph, output_channel=self.nchannel, scope="decoder", reuse=True)['output'])
+
+        # Free Batch Decode
+        self.free_latent_ph = tf.placeholder(tf.float32, shape = [None, self.args.nconti+self.args.ncat])
+        self.free_dec_output_ph = tf.nn.sigmoid(self.decoder_net(z=self.free_latent_ph, output_channel=self.nchannel, scope="decoder", reuse=True)['output'])
 
         self.logger.info("Model building ends")
 
@@ -251,4 +256,44 @@ class Model(ModelPlugin):
                 gif.append(matrix_image2big_image(np.expand_dims(self.decode(latent_input=np.concatenate([latent_conti, np.tile(np.expand_dims(latent_cat, axis=0), [self.args.nconti,1])], axis=1)), axis=0)))
         write_gif(content=gif, path=path)
 
+    def generate_image_pairs(self, asset_dir, n_pairs, include_discrete=True):
+        n_rounds = n_pairs // self.args.nbatch
+        pairs_path = os.path.join(asset_dir, 'pairs_dataset')
+        if not os.path.exists(pairs_path):
+            os.makedirs(pairs_path)
+        for i in range(n_rounds):
+            # z_1 = np.random.normal(size=[self.args.nbatch, self.args.nconti])
+            # z_2 = np.random.normal(size=[self.args.nbatch, self.args.nconti])
+            z_1 = np.random.uniform(low=-2, high=2, size=[self.args.nbatch, self.args.nconti])
+            z_2 = np.random.uniform(low=-2, high=2, size=[self.args.nbatch, self.args.nconti])
+            if self.latent_type == 'onedim':
+                delta_dim = np.random.randint(0, self,args.nconti, size=[self.args.nbatch])
+                delta_onehot = np.zeros((self.args.nbatch, self.args.nconti))
+                delta_onehot[np.arange(delta_dim.size), delta_dim] = 1
+                z_2 = np.where(delta_onehot > 0, z_2, z_1)
+            delta_z = z_1 - z_2
+            if i == 0:
+                labels = delta_z
+            else:
+                labels = np.concatenate([labels, delta_z], axis=0)
 
+            if include_discrete:
+                cat_dim = np.random.randint(0, self,args.ncat, size=[self.args.nbatch])
+                cat_onehot = np.zeros((self.args.nbatch, self.args.ncat))
+                cat_onehot[np.arange(cat_dim.size), cat_dim] = 1
+            else:
+                cat_onehot = np.zeros((self.args.nbatch, self.args.ncat))
+            img_1 = tf.run(self.free_dec_output_ph, 
+                    feed_dict={self.free_latent_ph: 
+                        np.concatenate([z_1, cat_onehot], axis=1)})
+            img_2 = tf.run(self.free_dec_output_ph, 
+                    feed_dict={self.free_latent_ph: 
+                        np.concatenate([z_2, cat_onehot], axis=1)})
+            # [b, h, w, c]
+            for i in range(img_1.shape[0]):
+                pair_np = np.concatenate([img_1[i], img_2[i]], axis=1)
+                pair_np = (pair_np * 255).astype(np.uint8)
+                img = Image.fromarray(pair_np)
+                img.save(os.path.join(pairs_path, 'pair_%05d.jpg' % i))
+
+        write_npy(labels, os.path.join(pairs_path, 'labels.npy'))

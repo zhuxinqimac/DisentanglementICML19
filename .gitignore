@@ -250,3 +250,5 @@ run_*.sh
 .*.pyc
 *.swp
 .*.swp
+.*.swo
+*.swo
