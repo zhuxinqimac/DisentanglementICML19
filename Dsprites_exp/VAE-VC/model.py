@@ -1,6 +1,7 @@
 import os
 import sys
 import datetime
+import pdb
 from PIL import Image
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), '../..'))
 
@@ -292,7 +293,8 @@ class Model(ModelPlugin):
             # [b, h, w, c]
             for j in range(img_1.shape[0]):
                 pair_np = np.concatenate([img_1[j], img_2[j]], axis=1)
-                pair_np = (pair_np * 255).astype(np.uint8)
+                # pair_np = (pair_np * 255).astype(np.uint8)
+                pair_np = (np.squeeze(pair_np) * 255).astype(np.uint8)
                 img = Image.fromarray(pair_np)
                 img.save(os.path.join(pairs_path, 'pair_%06d.jpg' % (i * batch_size + j)))
             # if i == 0:

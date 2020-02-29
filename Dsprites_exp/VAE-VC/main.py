@@ -15,10 +15,10 @@ import tensorflow as tf
 import numpy as np
 
 if __name__ == '__main__':
-    # NITER = 300000
-    NITER = 80000
-    # PITER = 20000
-    PITER = 6000
+    NITER = 300000
+    # NITER = 80000
+    PITER = 20000
+    # PITER = 6000
     SITER = 10000
 
     parser = local_dsprites_parser()
