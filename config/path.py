@@ -1,6 +1,6 @@
-ROOT = '/share2/xqzhu/repo_results/DisentanglementICML19/Results_dsprites/'
-DSPRITESPATH = '/share2/xqzhu/disentangle_datasets/dsprites/'
-SHAPES3DPATH = '/share2/xqzhu/disentangle_datasets/'
+ROOT = '/mnt/hdd/repo_results/DisentanglementICML19/Results_dsprites/'
+DSPRITESPATH = '/mnt/hdd/Datasets/dsprites/'
+SHAPES3DPATH = '/mnt/hdd/Datasets/disentangle_datasets/'
 
 import os
 import sys

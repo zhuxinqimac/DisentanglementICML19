@@ -17,7 +17,7 @@ from tfops.train_op import get_train_op_v2
 from tfops.lr_op import DECAY_DICT, DECAY_PARAMS_DICT
 from tfops.nets import encoder1_64
 from tfops.nets import decoder1_64
-from local_nets import disc_net_64
+from local_nets import disc_net_64, disc_net_64_simple
 from tfops.loss import sigmoid_cross_entropy_without_mean, vae_kl_cost_weight
 
 import tensorflow as tf
@@ -50,7 +50,10 @@ class Model(ModelPlugin):
         # Encoding
         self.encoder_net = encoder1_64
         self.decoder_net = decoder1_64
-        self.disc_net = disc_net_64
+        if self.args.disc_type == 'simple':
+            self.disc_net = disc_net_64_simple
+        else:
+            self.disc_net = disc_net_64
 
         # Continuous rep
         self.mean_total, self.stddev_total = tf.split(self.encoder_net(self.input1, output_dim=2*self.args.nconti, scope='encoder', reuse=False)['output'], num_or_size_splits=2, axis=1)
@@ -59,7 +62,7 @@ class Model(ModelPlugin):
 
         # For VC-Loss
         self.z_delta = tf.cast(tf.one_hot(self.delta_dim, self.args.nconti), self.z_sample.dtype)
-        rand_eps = tf.random.normal([self.args.nbatch, 1], mean=0.0, stddev=2.0)
+        rand_eps = tf.random.normal([self.args.nbatch, 1], mean=0.0, stddev=self.args.delta_std)
         self.delta_target = self.z_delta * rand_eps
         self.z_added = self.delta_target
         self.z_added = self.z_added + self.z_sample
@@ -68,19 +71,20 @@ class Model(ModelPlugin):
         self.dec_output = self.dec_output_dict['output']
         self.feat_output = self.dec_output_dict['deconv2d2']
         self.F_loss = tf.reduce_mean(self.feat_output * self.feat_output)
-        self.F_loss = self.args.F_beta * self.F_loss
+        # self.F_loss = self.args.F_beta * self.F_loss
+        self.F_loss = 0.
 
         self.objective_2 = tf.cast(tf.one_hot(self.objective_2_idx, self.args.ncat), self.z_added.dtype)
         self.dec_output_2 = self.decoder_net(z=tf.concat([self.z_added, self.objective_2], axis=-1), output_channel=self.nchannel, scope="decoder", reuse=True)['output']
         self.disc_output = self.disc_net(img1=self.dec_output, img2=self.dec_output_2, target_dim=self.args.nconti, scope='discriminator', reuse=False)['output']
 
         # Loss VC CEloss
-        # self.disc_prob = tf.nn.softmax(self.disc_output, axis=1)
-        # self.I_loss = tf.reduce_mean(tf.reduce_sum(self.z_delta * tf.log(self.disc_prob + 1e-12), axis=1))
-        # self.I_loss = - self.args.C_lambda * self.I_loss
+        self.disc_prob = tf.nn.softmax(self.disc_output, axis=1)
+        self.I_loss = tf.reduce_mean(tf.reduce_sum(self.z_delta * tf.log(self.disc_prob + 1e-12), axis=1))
+        self.I_loss = - self.args.C_lambda * self.I_loss
         # Loss VC MSEloss
-        self.I_loss = tf.reduce_mean(tf.reduce_sum((self.disc_output - self.delta_target) ** 2, axis=1))
-        self.I_loss = self.args.C_lambda * self.I_loss
+        # self.I_loss = tf.reduce_mean(tf.reduce_sum((self.disc_output - self.delta_target) ** 2, axis=1))
+        # self.I_loss = self.args.C_lambda * self.I_loss
 
         # Unary vector
         self.rec_cost_vector = sigmoid_cross_entropy_without_mean(labels=self.input1, logits=self.dec_output)
