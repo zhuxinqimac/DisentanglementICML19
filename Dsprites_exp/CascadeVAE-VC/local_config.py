@@ -9,7 +9,8 @@ KEY = 'CascadeVAE-VC'
 RESULT_DIR = ROOT+'{}/'.format(KEY)
 ID_STRUCTURE_DICT = {
         'CascadeVAE-VC' : ('nbatch', 'nconti', 'ncat', 'ntime', 'plamb', 
-            'beta_min', 'beta_max', 'dptype', 'C_lambda', 'F_beta', 'disc_type', 'rseed'),
+            'beta_min', 'beta_max', 'dptype', 'C_lambda', 'F_beta', 'disc_type', 
+                           'delta_std', 'switch_dis', 'rseed'),
         }
 ID_STRUCTURE = ID_STRUCTURE_DICT[KEY]
 
@@ -28,5 +29,6 @@ def local_dsprites_parser():
     parser.add_argument("--F_beta", default = 0, help="Beta of feature map loss for VC model", type = float)
     parser.add_argument("--disc_type", default = 'normal', help="Disc type", type = str, choices=['normal', 'simple'])
     parser.add_argument("--delta_std", default = 2, help="Delta std for discriminator", type = float)
+    parser.add_argument("--switch_dis", action='store_true', help="If switch discrete")
     return parser
 
