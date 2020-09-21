@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Mon 21 Sep 2020 23:17:23 AEST
+# --- Last Modified: Tue 22 Sep 2020 00:14:50 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -110,9 +110,13 @@ def lie_decoder1_64(z,
                         lie_alg_basis_ls,
                         axis=0)[tf.newaxis,
                                 ...]  # [1, lat_dim, mat_dim, mat_dim]
-                    lie_alg_mul = nets_dict['input'][
+
+                    input_conti = nets_dict['input'][:, :nconti]
+                    input_cat = nets_dict['input'][:, nconti:]
+                    lie_alg_mul = input_conti[
                         ..., tf.newaxis, tf.
                         newaxis] * lie_alg_basis  # [b, lat_dim, mat_dim, mat_dim]
+
                     nets_dict['lie_alg'] = tf.reduce_sum(
                         lie_alg_mul, axis=1)  # [b, mat_dim, mat_dim]
                     nets_dict['lie_group_mat'] = tf.linalg.expm(
@@ -120,11 +124,18 @@ def lie_decoder1_64(z,
                     nets_dict['lie_group_flat'] = tf.reshape(
                         nets_dict['lie_group_mat'], [-1, mat_dim * mat_dim])
 
-                    nets_dict['fc0'] = slim.fully_connected(
+                    nets_dict['fc0_conti'] = slim.fully_connected(
                         nets_dict['lie_group_flat'],
                         256,
                         activation_fn=tf.nn.relu,
                         scope="fc0")
+                    nets_dict['fc0_cat'] = slim.fully_connected(
+                        input_cat,
+                        256,
+                        activation_fn=tf.nn.relu,
+                        scope="fc0_cat")
+                    nets_dict[
+                        'fc0'] = nets_dict['fc0_conti'] + nets_dict['fc0_cat']
                     nets_dict['fc1'] = slim.fully_connected(
                         nets_dict['fc0'],
                         4 * 4 * 64,
