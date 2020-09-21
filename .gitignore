@@ -252,3 +252,4 @@ run_*.sh
 .*.swp
 .*.swo
 *.swo
+path_const.py

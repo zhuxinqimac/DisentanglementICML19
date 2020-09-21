@@ -3,7 +3,8 @@ import sys
 import h5py
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..'))
 
-from config.path import DSPRITESPATH, SHAPES3DPATH
+# from config.path import DSPRITESPATH, SHAPES3DPATH
+from config.path_const import DSPRITESPATH, SHAPES3DPATH
 from utils.reader_op import read_npy, read_npy_py3
 from utils.datamanager import DspritesManager, Shapes3DManager
 

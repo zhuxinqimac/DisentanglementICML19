@@ -1,35 +1,29 @@
 import os
 import sys
-sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), '../..'))
+# sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), '../..'))
+sys.path.insert(
+    0,
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 
 from model import Model
 
 from config.path import subdirs5resultdir, muldir2mulsubdir
 
-from utils.datasetmanager import dsprites_manager, shapes_3d_manager
+from utils.datasetmanager import dsprites_manager
 from utils.format_op import FileIdManager
 
-from local_config import local_dsprites_parser, ID_STRUCTURE, KEY
+from local_config import local_dsprites_parser, RESULT_DIR, ID_STRUCTURE
 
 import tensorflow as tf
 import numpy as np
 
 if __name__ == '__main__':
-    # NITER = 300000
-    NITER = 140000
-    # PITER = 20000
-    PITER = 10000
+    NITER = 300000
+    PITER = 20000
     SITER = 10000
 
     parser = local_dsprites_parser()
     args = parser.parse_args() # parameter required for model
-
-    ROOT_DIRS = {
-            'dsprites': '/mnt/hdd/repo_results/DisentanglementICML19/Results_dsprites/',
-            '3dshapes': '/mnt/hdd/repo_results/DisentanglementICML19/Results_3dshapes/'
-            }
-    ROOT = ROOT_DIRS[args.dataset]
-    RESULT_DIR = ROOT+'{}/'.format(KEY)
 
     fim = FileIdManager(ID_STRUCTURE)
 
@@ -38,10 +32,7 @@ if __name__ == '__main__':
     SAVE_DIR, LOG_DIR, ASSET_DIR = subdirs5resultdir(RESULT_DIR, True)
     SAVE_SUBDIR, ASSET_SUBDIR = muldir2mulsubdir([SAVE_DIR, ASSET_DIR], FILE_ID, True)
 
-    if args.dataset == 'dsprites':
-        dm = dsprites_manager()
-    else:
-        dm = shapes_3d_manager()
+    dm = dsprites_manager()
     dm.print_shape()
 
     model = Model(dm, LOG_DIR+FILE_ID+'.log', args)
