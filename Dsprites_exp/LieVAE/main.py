@@ -42,5 +42,7 @@ if __name__ == '__main__':
     model.restore(save_dir=SAVE_SUBDIR)
     train_idx = model.start_iter//PITER
     include_discrete = False if train_idx < args.ntime else True
+    print('include_discrete:', include_discrete)
     accuracy = model.evaluate(include_discrete=include_discrete)
+    print('accuracy:', accuracy)
 

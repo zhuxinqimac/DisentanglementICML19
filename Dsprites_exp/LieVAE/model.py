@@ -198,6 +198,7 @@ class Model(ModelPlugin):
                     self.save(iter_, save_dir)
                     self.logger.info("Save process")
                     max_accuracy = accuracy
+                print('max_accuracy:', max_accuracy)
         self.logger.info("Model training ends")
 
     def evaluate(self, print_option=False, include_discrete=False, eps=1e-8, nsample=1024):
