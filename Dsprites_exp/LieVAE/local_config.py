@@ -26,7 +26,7 @@ def local_dsprites_parser():
     parser.add_argument("--spl", default = 1, help="Split hyper of LieVAE", type = float)
     parser.add_argument("--hes", default = 0, help="Hessian hyper of LieVAE", type = float)
     parser.add_argument("--lin", default = 0, help="Linear hyper of LieVAE", type = float)
-    parser.add_argument("--ncut", default = 1, help="Number of cuts of LieVAE", type = float)
+    parser.add_argument("--ncut", default = 1, help="Number of cuts of LieVAE", type = int)
     parser.add_argument("--dtype", default = 'stair', help="decay type", type = str)
     parser.add_argument("--dptype", default = 'a3', help="decay parameter type", type = str)
     parser.add_argument("--nconti", default = 6, help="the dimension of continuous representation", type = int)
