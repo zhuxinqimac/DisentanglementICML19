@@ -65,6 +65,7 @@ class Model(ModelPlugin):
         decode_split_dict = self.decoder_net(z=tf.concat([self.z_sampled_split, self.objective_split], axis=-1), output_channel=self.nchannel, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=True)
         self.dec_split_lie_group_mat = decode_split_dict['lie_group_mat']
         self.dec_split_lie_alg = decode_split_dict['lie_alg']
+        self.lie_alg_basis = decode_split_dict['lie_alg_basis'] # [1, lat_dim, mat_dim, mat_dim]
 
 
         # Unary vector
@@ -80,7 +81,7 @@ class Model(ModelPlugin):
             # self.loss_dict[idx] = self.rec_cost+kl_cost+tf.losses.get_regularization_loss()
         self.kl_cost = vae_kl_cost(mean=self.mean_total, stddev=self.stddev_total)
         self.lie_loss = self.calc_lie_loss(self.enc_gfeats_mat, self.dec_lie_group_mat, self.dec_lie_alg,
-                                 self.dec_split_lie_group_mat, self.dec_split_lie_alg, self.args.nbatch)
+                                 self.dec_split_lie_group_mat, self.dec_split_lie_alg, self.lie_alg_basis, self.args.nbatch)
         self.loss = self.rec_cost + self.kl_cost + self.lie_loss
 
         # Decode
@@ -89,7 +90,7 @@ class Model(ModelPlugin):
 
         self.logger.info("Model building ends")
 
-    def calc_lie_loss(self, enc_gfeats_mat, dec_lie_group_mat, dec_lie_alg, dec_split_lie_group_mat, dec_split_lie_alg, nbatch):
+    def calc_lie_loss(self, enc_gfeats_mat, dec_lie_group_mat, dec_lie_alg, dec_split_lie_group_mat, dec_split_lie_alg, lie_alg_basis, nbatch):
         mat_dim = dec_lie_group_mat.get_shape().as_list()[1]
         group_feats_E = enc_gfeats_mat
         gfeats_G = dec_lie_group_mat
@@ -115,6 +116,13 @@ class Model(ModelPlugin):
             lie_alg_linear_G_split_mul = lie_alg_linear_G_split_mul * lie_alg_G_split_ls[
                 i]
 
+        # [1, lat_dim, mat_dim, mat_dim]
+        _, lat_dim, mat_dim, _ = lie_alg_basis.get_shape().as_list()
+        lie_alg_basis_col = tf.reshape(lie_alg_basis, [lat_dim, 1, mat_dim, mat_dim])
+        lie_alg_basis_mul = tf.matmul(lie_alg_basis, lie_alg_basis_col)
+        lie_alg_basis_mask = 1. - tf.eye(lat_dim, dtype=lie_alg_basis_mul.dtype)[:, :, tf.newaxis, tf.newaxis]
+        lie_alg_basis_mul = lie_alg_basis_mul * lie_alg_basis_mask
+
         if group_feats_E is None:
             rec_loss = 0
         else:
@@ -124,8 +132,9 @@ class Model(ModelPlugin):
         spl_loss = tf.reduce_mean(
             tf.reduce_sum(tf.square(gfeats_G_split_mul - gfeats_G),
                           axis=[1, 2]))
-        hessian_loss = tf.reduce_mean(
-            tf.reduce_sum(tf.square(lie_alg_G_split_mul), axis=[1, 2]))
+        # hessian_loss = tf.reduce_mean(
+            # tf.reduce_sum(tf.square(lie_alg_G_split_mul), axis=[1, 2]))
+        hessian_loss = tf.reduce_mean(tf.square(lie_alg_basis_mul))
         linear_loss = tf.reduce_mean(
             tf.reduce_sum(tf.square(lie_alg_linear_G_split_mul), axis=[1, 2]))
         loss = self.args.rec * rec_loss + self.args.spl * spl_loss + \
