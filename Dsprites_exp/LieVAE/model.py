@@ -184,6 +184,7 @@ class Model(ModelPlugin):
 
         final_iter = self.start_iter+niter
         max_accuracy = -1
+        max_acc_iter = -1
 
         for iter_ in tqdm_range(self.start_iter, final_iter):
             train_idx = (iter_ - self.start_iter)//piter
@@ -198,7 +199,10 @@ class Model(ModelPlugin):
                     self.save(iter_, save_dir)
                     self.logger.info("Save process")
                     max_accuracy = accuracy
+                    max_acc_iter = iter_
                 print('max_accuracy:', max_accuracy)
+                self.logger.info('max_accuracy: '+str(max_accuracy))
+                self.logger.info('max_acc_iter: '+str(max_acc_iter))
         self.logger.info("Model training ends")
 
     def evaluate(self, print_option=False, include_discrete=False, eps=1e-8, nsample=1024):
