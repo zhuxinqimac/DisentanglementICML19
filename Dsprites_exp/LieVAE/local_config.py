@@ -13,7 +13,7 @@ KEY = 'LieVAE'
 RESULT_DIR = ROOT+'{}/'.format(KEY)
 ID_STRUCTURE_DICT = {
         'LieVAE' : ('nbatch', 'nconti', 'ncat', 'group_feats_size', 'ntime', 'plamb',
-                    'rec', 'spl', 'hes', 'lin', 'ncut', 'dptype', 'rseed'),
+                    'rec', 'spl', 'hes', 'lin', 'ncut', 'dptype', 'piter', 'rseed'),
         }
 ID_STRUCTURE = ID_STRUCTURE_DICT[KEY]
 
