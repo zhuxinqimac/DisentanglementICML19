@@ -43,8 +43,8 @@ class Model(ModelPlugin):
 
         self.mcf = SolveMaxMatching(nworkers=self.args.nbatch, ntasks=self.args.ncat, k=1, pairwise_lamb=self.args.plamb)
         # Encoding
-        # self.encoder_net = lie_encoder1_64
-        self.encoder_net = encoder1_64
+        self.encoder_net = lie_encoder1_64
+        # self.encoder_net = encoder1_64
         self.decoder_net = lie_decoder1_64
 
         # Continuous rep
