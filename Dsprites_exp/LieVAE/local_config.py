@@ -32,5 +32,8 @@ def local_dsprites_parser():
     parser.add_argument("--nconti", default = 6, help="the dimension of continuous representation", type = int)
     parser.add_argument("--ncat", default = 3, help="size of categorical data", type = int)
     parser.add_argument("--ntime", default = 4, help="When does discrete variable to be learned", type = int)
+    parser.add_argument("--niter", default = 300000, help="Number of iters to train", type = int)
+    parser.add_argument("--piter", default = 20000, help="Iters as index divider", type = int)
+    parser.add_argument("--siter", default = 10000, help="Iters for snapshot", type = int)
     return parser
 

@@ -18,12 +18,15 @@ import tensorflow as tf
 import numpy as np
 
 if __name__ == '__main__':
-    NITER = 300000
-    PITER = 20000
-    SITER = 10000
+    # NITER = 300000
+    # PITER = 20000
+    # SITER = 10000
 
     parser = local_dsprites_parser()
     args = parser.parse_args() # parameter required for model
+    NITER = args.niter
+    PITER = args.piter
+    SITER = args.siter
 
     fim = FileIdManager(ID_STRUCTURE)
 
