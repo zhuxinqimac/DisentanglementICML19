@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Tue 22 Sep 2020 20:45:50 AEST
+# --- Last Modified: Wed 23 Sep 2020 01:17:04 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -131,11 +131,14 @@ def lie_decoder1_64(z,
                         scope="fc0")
                     nets_dict['fc0_cat'] = slim.fully_connected(
                         input_cat,
-                        256,
+                        128,
                         activation_fn=tf.nn.relu,
                         scope="fc0_cat")
-                    nets_dict[
-                        'fc0'] = nets_dict['fc0_conti'] + nets_dict['fc0_cat']
+                    # nets_dict[
+                    # 'fc0'] = nets_dict['fc0_conti'] + nets_dict['fc0_cat']
+                    nets_dict['fc0'] = tf.concat(
+                        [nets_dict['fc0_conti'], nets_dict['fc0_cat']],
+                        axis=-1)
                     nets_dict['fc1'] = slim.fully_connected(
                         nets_dict['fc0'],
                         4 * 4 * 64,
@@ -155,20 +158,46 @@ def lie_decoder1_64(z,
                         scope='deconv2d_3')
                     return nets_dict
 
+
 # def encoder1_64(x, output_dim, output_nonlinearity=None, scope="ENC", reuse=False):
-def encoder1_64(x, output_dim, output_nonlinearity=None, scope="ENC", group_feats_size=400, reuse=False):
+def encoder1_64(x,
+                output_dim,
+                output_nonlinearity=None,
+                scope="ENC",
+                group_feats_size=400,
+                reuse=False):
     nets_dict = dict()
     nets_dict['input'] = x
     with tf.variable_scope(scope, reuse=reuse):
-        with slim.arg_scope([slim.conv2d, slim.fully_connected], weights_regularizer=slim.l2_regularizer(0.00004)):
-            with slim.arg_scope([slim.conv2d], weights_initializer=tf.contrib.slim.variance_scaling_initializer(), stride=2, padding='SAME', activation_fn=tf.nn.relu) :
-                with slim.arg_scope([slim.fully_connected], biases_initializer=tf.zeros_initializer()):
-                    nets_dict['conv2d0'] = slim.conv2d(nets_dict['input'], 32, [4, 4], scope='conv2d_0')
-                    nets_dict['conv2d1'] = slim.conv2d(nets_dict['conv2d0'], 32, [4, 4], scope='conv2d_1')
-                    nets_dict['conv2d2'] = slim.conv2d(nets_dict['conv2d1'], 64, [4, 4], scope='conv2d_2')
-                    nets_dict['conv2d3'] = slim.conv2d(nets_dict['conv2d2'], 64, [4, 4], scope='conv2d_3')
-                    n = tf.reshape(nets_dict['conv2d3'], [-1, 4*4*64])
-                    nets_dict['fc0'] = slim.fully_connected(n, 256, activation_fn=tf.nn.relu, scope = "output_fc0")
-                    nets_dict['output'] = slim.fully_connected(nets_dict['fc0'], output_dim, activation_fn=output_nonlinearity, scope = "output_fc1")
+        with slim.arg_scope([slim.conv2d, slim.fully_connected],
+                            weights_regularizer=slim.l2_regularizer(0.00004)):
+            with slim.arg_scope([slim.conv2d],
+                                weights_initializer=tf.contrib.slim.
+                                variance_scaling_initializer(),
+                                stride=2,
+                                padding='SAME',
+                                activation_fn=tf.nn.relu):
+                with slim.arg_scope([slim.fully_connected],
+                                    biases_initializer=tf.zeros_initializer()):
+                    nets_dict['conv2d0'] = slim.conv2d(nets_dict['input'],
+                                                       32, [4, 4],
+                                                       scope='conv2d_0')
+                    nets_dict['conv2d1'] = slim.conv2d(nets_dict['conv2d0'],
+                                                       32, [4, 4],
+                                                       scope='conv2d_1')
+                    nets_dict['conv2d2'] = slim.conv2d(nets_dict['conv2d1'],
+                                                       64, [4, 4],
+                                                       scope='conv2d_2')
+                    nets_dict['conv2d3'] = slim.conv2d(nets_dict['conv2d2'],
+                                                       64, [4, 4],
+                                                       scope='conv2d_3')
+                    n = tf.reshape(nets_dict['conv2d3'], [-1, 4 * 4 * 64])
+                    nets_dict['fc0'] = slim.fully_connected(
+                        n, 256, activation_fn=tf.nn.relu, scope="output_fc0")
+                    nets_dict['output'] = slim.fully_connected(
+                        nets_dict['fc0'],
+                        output_dim,
+                        activation_fn=output_nonlinearity,
+                        scope="output_fc1")
                     nets_dict['gfeats_mat'] = None
                     return nets_dict
