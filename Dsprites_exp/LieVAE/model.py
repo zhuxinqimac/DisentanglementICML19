@@ -123,6 +123,9 @@ class Model(ModelPlugin):
         lie_alg_basis_mask = 1. - tf.eye(lat_dim, dtype=lie_alg_basis_mul.dtype)[:, :, tf.newaxis, tf.newaxis]
         lie_alg_basis_mul = lie_alg_basis_mul * lie_alg_basis_mask
 
+        lie_alg_basis_linear = lie_alg_basis * lie_alg_basis_col
+        lie_alg_basis_linear = lie_alg_basis_linear * lie_alg_basis_mask
+
         if group_feats_E is None:
             rec_loss = 0
         else:
@@ -135,8 +138,9 @@ class Model(ModelPlugin):
         # hessian_loss = tf.reduce_mean(
             # tf.reduce_sum(tf.square(lie_alg_G_split_mul), axis=[1, 2]))
         hessian_loss = tf.reduce_mean(tf.square(lie_alg_basis_mul))
-        linear_loss = tf.reduce_mean(
-            tf.reduce_sum(tf.square(lie_alg_linear_G_split_mul), axis=[1, 2]))
+        # linear_loss = tf.reduce_mean(
+            # tf.reduce_sum(tf.square(lie_alg_linear_G_split_mul), axis=[1, 2]))
+        linear_loss = tf.reduce_mean(tf.square(lie_alg_basis_linear))
         loss = self.args.rec * rec_loss + self.args.spl * spl_loss + \
             self.args.hes * hessian_loss + self.args.lin * linear_loss
         return loss
