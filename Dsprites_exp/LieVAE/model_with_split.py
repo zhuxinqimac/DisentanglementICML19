@@ -1,20 +1,3 @@
-#!/usr/bin/python
-#-*- coding: utf-8 -*-
-
-# >.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
-# Licensed under the Apache License, Version 2.0 (the "License")
-# You may obtain a copy of the License at
-# http://www.apache.org/licenses/LICENSE-2.0
-
-# --- File Name: model.py
-# --- Creation Date: 23-09-2020
-# --- Last Modified: Wed 23 Sep 2020 16:55:23 AEST
-# --- Author: Xinqi Zhu
-# .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
-"""
-Lie Group Model
-"""
-
 import os
 import sys
 # sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), '../..'))
@@ -41,7 +24,7 @@ from utils_fn import split_latents
 import tensorflow as tf
 import numpy as np
 
-class Model(ModelPlugin):
+class ModelSplit(ModelPlugin):
     def __init__(self, dataset, logfilepath, args):
         super().__init__(dataset, logfilepath, args)
         self.build()
@@ -71,11 +54,20 @@ class Model(ModelPlugin):
         self.stddev_total = tf.nn.softplus(self.stddev_total)
         self.z_sample = tf.add(self.mean_total, tf.multiply(self.stddev_total, self.epsilon_input))
 
+        z_sampled_split_ls = split_latents(self.z_sample, self.args.nbatch, hy_ncut=self.args.ncut)
+        self.z_sampled_split = tf.concat(z_sampled_split_ls, axis=0)
+
         decode_dict = self.decoder_net(z=tf.concat([self.z_sample, self.objective], axis=-1), output_channel=self.nchannel, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=False)
         self.dec_output = decode_dict['output']
         self.dec_lie_group_mat = decode_dict['lie_group_mat']
         self.dec_lie_alg = decode_dict['lie_alg']
-        self.lie_alg_basis = decode_dict['lie_alg_basis'] # [1, lat_dim, mat_dim, mat_dim]
+
+        self.objective_split = tf.tile(self.objective, [self.args.ncut + 1, 1])
+        decode_split_dict = self.decoder_net(z=tf.concat([self.z_sampled_split, self.objective_split], axis=-1), output_channel=self.nchannel, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=True)
+        self.dec_split_lie_group_mat = decode_split_dict['lie_group_mat']
+        self.dec_split_lie_alg = decode_split_dict['lie_alg']
+        self.lie_alg_basis = decode_split_dict['lie_alg_basis'] # [1, lat_dim, mat_dim, mat_dim]
+
 
         # Unary vector
         self.rec_cost_vector = sigmoid_cross_entropy_without_mean(labels=self.input1, logits=self.dec_output)
@@ -83,8 +75,14 @@ class Model(ModelPlugin):
         # Loss
         self.rec_cost = tf.reduce_mean(self.rec_cost_vector)
 
+        # self.loss_dict = dict()
+        # for idx in range(self.args.nconti+1):
+            # weight = tf.constant(np.array(idx*[self.args.beta_min] + (self.args.nconti-idx)*[self.args.beta_max]), dtype=tf.float32)
+            # kl_cost = vae_kl_cost_weight(mean=self.mean_total, stddev=self.stddev_total, weight=weight)
+            # self.loss_dict[idx] = self.rec_cost+kl_cost+tf.losses.get_regularization_loss()
         self.kl_cost = vae_kl_cost(mean=self.mean_total, stddev=self.stddev_total)
-        self.lie_loss = self.calc_lie_loss(self.enc_gfeats_mat, self.dec_lie_group_mat, self.dec_lie_alg, self.lie_alg_basis, self.args.nbatch)
+        self.lie_loss = self.calc_lie_loss(self.enc_gfeats_mat, self.dec_lie_group_mat, self.dec_lie_alg,
+                                 self.dec_split_lie_group_mat, self.dec_split_lie_alg, self.lie_alg_basis, self.args.nbatch)
         self.loss = self.rec_cost + self.kl_cost + self.lie_loss
 
         # Decode
@@ -93,10 +91,31 @@ class Model(ModelPlugin):
 
         self.logger.info("Model building ends")
 
-    def calc_lie_loss(self, enc_gfeats_mat, dec_lie_group_mat, dec_lie_alg, lie_alg_basis, nbatch):
+    def calc_lie_loss(self, enc_gfeats_mat, dec_lie_group_mat, dec_lie_alg, dec_split_lie_group_mat, dec_split_lie_alg, lie_alg_basis, nbatch):
         mat_dim = dec_lie_group_mat.get_shape().as_list()[1]
         group_feats_E = enc_gfeats_mat
         gfeats_G = dec_lie_group_mat
+        gfeats_G_split_ls = [
+            dec_split_lie_group_mat[i * nbatch:(i + 1) * nbatch]
+            for i in range(self.args.ncut + 1)
+        ]
+        lie_alg_G_split_ls = [
+            dec_split_lie_alg[i * nbatch:(i + 1) * nbatch]
+            for i in range(self.args.ncut + 1)
+        ]
+
+        gfeats_G_split_mul = gfeats_G_split_ls[0]
+        for i in range(1, self.args.ncut + 1):
+            gfeats_G_split_mul = tf.matmul(gfeats_G_split_mul,
+                                           gfeats_G_split_ls[i])
+
+        lie_alg_G_split_mul = lie_alg_G_split_ls[0]
+        lie_alg_linear_G_split_mul = lie_alg_G_split_ls[0]
+        for i in range(1, self.args.ncut + 1):
+            lie_alg_G_split_mul = tf.matmul(lie_alg_G_split_mul,
+                                            lie_alg_G_split_ls[i])
+            lie_alg_linear_G_split_mul = lie_alg_linear_G_split_mul * lie_alg_G_split_ls[
+                i]
 
         # [1, lat_dim, mat_dim, mat_dim]
         _, lat_dim, mat_dim, _ = lie_alg_basis.get_shape().as_list()
@@ -114,8 +133,15 @@ class Model(ModelPlugin):
             rec_loss = tf.reduce_mean(
                 tf.reduce_sum(tf.square(group_feats_E - gfeats_G), axis=[1,
                                                                          2]))
+        # spl_loss = tf.reduce_mean(
+            # tf.reduce_sum(tf.square(gfeats_G_split_mul - gfeats_G),
+                          # axis=[1, 2]))
         spl_loss = tf.reduce_mean(tf.square(lie_alg_basis_mul - tf.transpose(lie_alg_basis_mul, perm=[1, 0, 2, 3])))
+        # hessian_loss = tf.reduce_mean(
+            # tf.reduce_sum(tf.square(lie_alg_G_split_mul), axis=[1, 2]))
         hessian_loss = tf.reduce_mean(tf.square(lie_alg_basis_mul))
+        # linear_loss = tf.reduce_mean(
+            # tf.reduce_sum(tf.square(lie_alg_linear_G_split_mul), axis=[1, 2]))
         linear_loss = tf.reduce_mean(tf.square(lie_alg_basis_linear))
         loss = self.args.rec * rec_loss + self.args.spl * spl_loss + \
             self.args.hes * hessian_loss + self.args.lin * linear_loss
