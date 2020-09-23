@@ -8,7 +8,7 @@
 
 # --- File Name: model.py
 # --- Creation Date: 23-09-2020
-# --- Last Modified: Wed 23 Sep 2020 16:55:23 AEST
+# --- Last Modified: Wed 23 Sep 2020 19:44:00 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -114,9 +114,9 @@ class Model(ModelPlugin):
             rec_loss = tf.reduce_mean(
                 tf.reduce_sum(tf.square(group_feats_E - gfeats_G), axis=[1,
                                                                          2]))
-        spl_loss = tf.reduce_mean(tf.square(lie_alg_basis_mul - tf.transpose(lie_alg_basis_mul, perm=[1, 0, 2, 3])))
-        hessian_loss = tf.reduce_mean(tf.square(lie_alg_basis_mul))
-        linear_loss = tf.reduce_mean(tf.square(lie_alg_basis_linear))
+        spl_loss = tf.reduce_sum(tf.square(lie_alg_basis_mul - tf.transpose(lie_alg_basis_mul, perm=[1, 0, 2, 3])))
+        hessian_loss = tf.reduce_sum(tf.square(lie_alg_basis_mul))
+        linear_loss = tf.reduce_sum(tf.square(lie_alg_basis_linear))
         loss = self.args.rec * rec_loss + self.args.spl * spl_loss + \
             self.args.hes * hessian_loss + self.args.lin * linear_loss
         return loss
