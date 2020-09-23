@@ -133,9 +133,10 @@ class Model(ModelPlugin):
             rec_loss = tf.reduce_mean(
                 tf.reduce_sum(tf.square(group_feats_E - gfeats_G), axis=[1,
                                                                          2]))
-        spl_loss = tf.reduce_mean(
-            tf.reduce_sum(tf.square(gfeats_G_split_mul - gfeats_G),
-                          axis=[1, 2]))
+        # spl_loss = tf.reduce_mean(
+            # tf.reduce_sum(tf.square(gfeats_G_split_mul - gfeats_G),
+                          # axis=[1, 2]))
+        spl_loss = tf.reduce_mean(tf.square(lie_alg_basis_mul - tf.transpose(lie_alg_basis_mul, perm=[1, 0, 2, 3])))
         # hessian_loss = tf.reduce_mean(
             # tf.reduce_sum(tf.square(lie_alg_G_split_mul), axis=[1, 2]))
         hessian_loss = tf.reduce_mean(tf.square(lie_alg_basis_mul))
