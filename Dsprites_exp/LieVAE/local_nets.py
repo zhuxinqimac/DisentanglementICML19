@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Wed 23 Sep 2020 01:17:04 AEST
+# --- Last Modified: Thu 24 Sep 2020 13:20:36 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -106,10 +106,13 @@ def lie_decoder1_64(z,
                             shape=[1, mat_dim, mat_dim],
                             initializer=init)
                         lie_alg_basis_ls.append(lie_alg_tmp)
-                    nets_dict['lie_alg_basis'] = tf.concat(
+                    lie_alg_basis = tf.concat(
                         lie_alg_basis_ls,
                         axis=0)[tf.newaxis,
                                 ...]  # [1, lat_dim, mat_dim, mat_dim]
+                    lie_alg_basis = tf.reshape(lie_alg_basis, [1, latent_dim, mat_dim * mat_dim])
+                    lie_alg_basis = tf.math.l2_normalize(lie_alg_basis, axis=-1)
+                    nets_dict['lie_alg_basis'] = tf.reshape(lie_alg_basis, [1, latent_dim, mat_dim, mat_dim])
 
                     input_conti = nets_dict['input'][:, :nconti]
                     input_cat = nets_dict['input'][:, nconti:]
