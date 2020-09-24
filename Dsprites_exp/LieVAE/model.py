@@ -8,7 +8,7 @@
 
 # --- File Name: model.py
 # --- Creation Date: 23-09-2020
-# --- Last Modified: Wed 23 Sep 2020 19:44:00 AEST
+# --- Last Modified: Thu 24 Sep 2020 21:41:07 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -106,7 +106,8 @@ class Model(ModelPlugin):
         lie_alg_basis_mul = lie_alg_basis_mul * lie_alg_basis_mask
 
         lie_alg_basis_linear = lie_alg_basis * lie_alg_basis_col
-        lie_alg_basis_linear = lie_alg_basis_linear * lie_alg_basis_mask
+        # lie_alg_basis_linear = lie_alg_basis_linear * lie_alg_basis_mask
+        lie_alg_basis_linear = lie_alg_basis_linear * (1. - lie_alg_basis_mask)
 
         if group_feats_E is None:
             rec_loss = 0
