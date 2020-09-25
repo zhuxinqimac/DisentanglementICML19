@@ -35,5 +35,6 @@ def local_dsprites_parser():
     parser.add_argument("--niter", default = 300000, help="Number of iters to train", type = int)
     parser.add_argument("--piter", default = 20000, help="Iters as index divider", type = int)
     parser.add_argument("--siter", default = 10000, help="Iters for snapshot", type = int)
+    parser.add_argument("--lie_norm_type", default = 'none', help="Lie algebra norm type", type = int)
     return parser
 

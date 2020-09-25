@@ -8,7 +8,7 @@
 
 # --- File Name: model.py
 # --- Creation Date: 23-09-2020
-# --- Last Modified: Thu 24 Sep 2020 21:41:07 AEST
+# --- Last Modified: Fri 25 Sep 2020 18:14:19 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -71,7 +71,7 @@ class Model(ModelPlugin):
         self.stddev_total = tf.nn.softplus(self.stddev_total)
         self.z_sample = tf.add(self.mean_total, tf.multiply(self.stddev_total, self.epsilon_input))
 
-        decode_dict = self.decoder_net(z=tf.concat([self.z_sample, self.objective], axis=-1), output_channel=self.nchannel, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=False)
+        decode_dict = self.decoder_net(z=tf.concat([self.z_sample, self.objective], axis=-1), output_channel=self.nchannel, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", lie_norm_type=self.args.lie_norm_type, reuse=False)
         self.dec_output = decode_dict['output']
         self.dec_lie_group_mat = decode_dict['lie_group_mat']
         self.dec_lie_alg = decode_dict['lie_alg']
@@ -89,7 +89,7 @@ class Model(ModelPlugin):
 
         # Decode
         self.latent_ph = tf.placeholder(tf.float32, shape = [self.args.nbatch, self.args.nconti+self.args.ncat])
-        self.dec_output_ph = tf.nn.sigmoid(self.decoder_net(z=self.latent_ph, output_channel=self.nchannel, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=True)['output'])
+        self.dec_output_ph = tf.nn.sigmoid(self.decoder_net(z=self.latent_ph, output_channel=self.nchannel, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", lie_norm_type=self.args.lie_norm_type, reuse=True)['output'])
 
         self.logger.info("Model building ends")
 

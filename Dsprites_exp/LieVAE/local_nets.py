@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Thu 24 Sep 2020 21:40:37 AEST
+# --- Last Modified: Fri 25 Sep 2020 18:18:52 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -81,6 +81,7 @@ def lie_decoder1_64(z,
                     group_feats_size=400,
                     nconti=6,
                     ncat=3,
+                    lie_norm_type=None,
                     reuse=False):
     nets_dict = dict()
     nets_dict['input'] = z
@@ -110,10 +111,28 @@ def lie_decoder1_64(z,
                         lie_alg_basis_ls,
                         axis=0)[tf.newaxis,
                                 ...]  # [1, lat_dim, mat_dim, mat_dim]
-                    # lie_alg_basis = tf.reshape(lie_alg_basis, [1, latent_dim, mat_dim * mat_dim])
-                    # lie_alg_basis = tf.math.l2_normalize(lie_alg_basis, axis=-1)
-                    # nets_dict['lie_alg_basis'] = tf.reshape(lie_alg_basis, [1, latent_dim, mat_dim, mat_dim])
-                    nets_dict['lie_alg_basis'] = lie_alg_basis
+                    if lie_norm_type == 'none':
+                        nets_dict['lie_alg_basis'] = lie_alg_basis
+                    elif lie_norm_type == 'l2':
+                        lie_alg_basis = tf.reshape(
+                            lie_alg_basis, [1, latent_dim, mat_dim * mat_dim])
+                        lie_alg_basis = tf.math.l2_normalize(lie_alg_basis,
+                                                             axis=-1)
+                        nets_dict['lie_alg_basis'] = tf.reshape(
+                            lie_alg_basis, [1, latent_dim, mat_dim, mat_dim])
+                    elif lie_norm_type == 'squash':
+                        lie_alg_basis = tf.reshape(
+                            lie_alg_basis, [1, latent_dim, mat_dim * mat_dim])
+                        lie_alg_basis_norm = tf.norm(lie_alg_basis,
+                                                     axis=-1,
+                                                     keepdims=True)
+                        lie_alg_basis_norm_square = tf.square(
+                            lie_alg_basis_norm)
+                        lie_alg_basis_squash = lie_alg_basis_norm_square / (1 + lie_alg_basis_norm_square) * \
+                            lie_alg_basis / lie_alg_basis_norm
+                        nets_dict['lie_alg_basis'] = tf.reshape(
+                            lie_alg_basis_squash,
+                            [1, latent_dim, mat_dim, mat_dim])
 
                     input_conti = nets_dict['input'][:, :nconti]
                     input_cat = nets_dict['input'][:, nconti:]
