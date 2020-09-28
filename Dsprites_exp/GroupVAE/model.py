@@ -8,7 +8,7 @@
 
 # --- File Name: model.py
 # --- Creation Date: 23-09-2020
-# --- Last Modified: Mon 28 Sep 2020 18:22:36 AEST
+# --- Last Modified: Mon 28 Sep 2020 18:55:44 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -135,7 +135,7 @@ class Model(ModelPlugin):
         else:
             raise ValueError('Not recognized hessian_type:', hessian_type)
 
-        loss = self.args.hy_gmat * gmat_loss + self.args.hes * hessian_loss + self.args.lin * lin_loss
+        loss = self.args.gmat * gmat_loss + self.args.hes * hessian_loss + self.args.lin * lin_loss
         return loss
 
     def decode(self, latent_input):
