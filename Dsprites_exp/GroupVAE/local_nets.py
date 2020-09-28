@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Mon 28 Sep 2020 17:24:36 AEST
+# --- Last Modified: Mon 28 Sep 2020 22:45:37 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -85,7 +85,7 @@ def group_decoder1_64(z,
                                                  initializer=act_init)
                     nets_dict['act_points'] = tf.matmul(nets_dict['scale_group'],
                                                         act_points) # [b, mat_dim, n_act_points]
-                    transed_act_points = tf.matmul(nets_dict['lie_group_mat'], act_points)
+                    transed_act_points = tf.matmul(nets_dict['lie_group_mat'], nets_dict['act_points'])
                     transed_act_points_tensor = tf.reshape(transed_act_points,
                                                            [-1, mat_dim * n_act_points])
                     nets_dict['act_points_transed'] = transed_act_points_tensor

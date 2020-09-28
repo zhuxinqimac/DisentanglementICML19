@@ -8,7 +8,7 @@
 
 # --- File Name: model.py
 # --- Creation Date: 23-09-2020
-# --- Last Modified: Mon 28 Sep 2020 18:55:44 AEST
+# --- Last Modified: Mon 28 Sep 2020 21:58:17 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -90,7 +90,7 @@ class Model(ModelPlugin):
 
         self.kl_cost = vae_kl_cost(mean=self.mean_total, stddev=self.stddev_total)
         self.lie_loss = self.calc_lie_loss(self.dec_lie_group_mat, self.dec_lie_alg, self.lie_alg_basis, self.act_points, self.args.hessian_type, self.args.nbatch)
-        self.loss = self.rec_cost + self.kl_cost + self.lie_loss
+        self.loss = self.rec_cost + self.kl_cost + self.lie_loss + tf.losses.get_regularization_loss
 
         # Decode
         self.latent_ph = tf.placeholder(tf.float32, shape = [self.args.nbatch, self.args.nconti+self.args.ncat])
@@ -148,13 +148,13 @@ class Model(ModelPlugin):
         self.logger.info("Start iter: {}".format(self.start_iter))
 
         decay_func = DECAY_DICT[self.args.dtype]
-        decay_params = DECAY_PARAMS_DICT[self.args.dtype][self.args.nbatch][self.args.dptype].copy() 
+        decay_params = DECAY_PARAMS_DICT[self.args.dtype][self.args.nbatch][self.args.dptype].copy()
         decay_params['initial_step'] = self.start_iter
 
         self.lr, update_step_op = decay_func(**decay_params)
         self.update_step_op = [update_step_op]
 
-        var_list = [v for v in tf.trainable_variables() if 'encoder' in v.name] + [v for v in tf.trainable_variables() if 'decoder' in v.name] 
+        var_list = [v for v in tf.trainable_variables() if 'encoder' in v.name] + [v for v in tf.trainable_variables() if 'decoder' in v.name]
 
         # self.train_op_dict = dict()
         # with tf.control_dependencies(tf.get_collection("update_ops")):
