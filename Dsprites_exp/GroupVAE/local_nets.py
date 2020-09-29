@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Tue 29 Sep 2020 18:23:41 AEST
+# --- Last Modified: Wed 30 Sep 2020 01:36:32 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -89,7 +89,9 @@ def group_decoder1_64(z,
                     transed_act_points = tf.matmul(nets_dict['lie_group_mat'], nets_dict['act_points'])
                     transed_act_points_tensor = tf.reshape(transed_act_points,
                                                            [-1, mat_dim * n_act_points])
-                    nets_dict['act_points_transed'] = transed_act_points_tensor
+                    # nets_dict['act_points_transed'] = transed_act_points_tensor
+                    nets_dict['act_points_transed'] = tf.reshape(nets_dict['scale_group'],
+                                                                 [-1, mat_dim * mat_dim])
 
 
                     nets_dict['fc0'] = slim.fully_connected(
@@ -97,14 +99,6 @@ def group_decoder1_64(z,
                         256,
                         activation_fn=tf.nn.relu,
                         scope="fc0")
-                    # nets_dict['fc0_cat'] = slim.fully_connected(
-                        # input_cat,
-                        # 128,
-                        # activation_fn=tf.nn.relu,
-                        # scope="fc0_cat")
-                    # nets_dict['fc0'] = tf.concat(
-                        # [nets_dict['fc0_conti'], nets_dict['fc0_cat']],
-                        # axis=-1)
                     nets_dict['fc1'] = slim.fully_connected(
                         nets_dict['fc0'],
                         4 * 4 * 64,
