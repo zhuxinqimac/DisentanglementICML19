@@ -8,7 +8,7 @@
 
 # --- File Name: model.py
 # --- Creation Date: 23-09-2020
-# --- Last Modified: Fri 02 Oct 2020 02:22:04 AEST
+# --- Last Modified: Fri 02 Oct 2020 02:23:24 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -34,7 +34,7 @@ from tfops.transform_op import apply_tf_op, apply_tf_op_multi_output, apply_tf_o
 from tfops.train_op import get_train_op_v2
 from tfops.lr_op import DECAY_DICT, DECAY_PARAMS_DICT
 from tfops.nets import encoder1_64, decoder1_64
-from local_nets import group_decoder1_64
+from local_nets import group_decoder1_64, group_spl_decoder1_64
 from tfops.loss import sigmoid_cross_entropy_without_mean, vae_kl_cost
 from utils_fn import split_latents
 
@@ -61,7 +61,7 @@ class Model(ModelPlugin):
         self.mcf = SolveMaxMatching(nworkers=self.args.nbatch, ntasks=self.args.ncat, k=1, pairwise_lamb=self.args.plamb)
         # Encoding
         self.encoder_net = encoder1_64
-        self.decoder_net = group_decoder1_64
+        self.decoder_net = group_spl_decoder1_64
 
         # Continuous rep
         self.mean_total, self.stddev_total = tf.split(self.encoder_net(self.input1, output_dim=2*self.args.nconti, scope='encoder', reuse=False)['output'], num_or_size_splits=2, axis=1)
