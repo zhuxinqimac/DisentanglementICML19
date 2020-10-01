@@ -8,7 +8,7 @@
 
 # --- File Name: model.py
 # --- Creation Date: 23-09-2020
-# --- Last Modified: Fri 02 Oct 2020 02:23:24 AEST
+# --- Last Modified: Fri 02 Oct 2020 02:55:10 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -160,7 +160,7 @@ class Model(ModelPlugin):
         return loss
 
     def decode(self, latent_input):
-        return apply_tf_op(inputs=latent_input, session=self.sess, input_gate=self.latent_ph, output_gate=self.dec_output_ph, batch_size=self.args.nbatch)
+        return apply_tf_op(inputs=latent_input, session=self.sess, input_gate=self.latent_ph, output_gate=self.dec_output_ph, batch_size=self.args.nbatch, train_gate=self.istrain)
 
     def set_up_train(self):
         self.logger.info("Model setting up train starts")
