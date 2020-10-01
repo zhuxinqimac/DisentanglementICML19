@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Fri 02 Oct 2020 02:42:42 AEST
+# --- Last Modified: Fri 02 Oct 2020 02:46:38 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -128,31 +128,6 @@ def group_decoder1_64(z,
                         scope='deconv2d_3')
                     return nets_dict
 
-
-def train_fn(latents_in_cut_ls, nets_dict):
-    lie_alg_mul_0 = latents_in_cut_ls[0][
-        ..., tf.newaxis, tf.newaxis] * nets_dict[
-            'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
-    lie_alg_mul_1 = latents_in_cut_ls[1][
-        ..., tf.newaxis, tf.newaxis] * nets_dict[
-            'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
-    lie_alg_0 = tf.reduce_sum(lie_alg_mul_0, axis=1)  # [b, mat_dim, mat_dim]
-    lie_alg_1 = tf.reduce_sum(lie_alg_mul_1, axis=1)  # [b, mat_dim, mat_dim]
-    lie_alg = lie_alg_0 + lie_alg_1
-    lie_group_0 = tf.linalg.expm(lie_alg_0)  # [b, mat_dim, mat_dim]
-    lie_group_1 = tf.linalg.expm(lie_alg_1)  # [b, mat_dim, mat_dim]
-    lie_group_mat = tf.matmul(lie_group_0, lie_group_1)
-    return lie_alg, lie_group_mat
-
-
-def val_fn(input_conti, nets_dict):
-    lie_alg_mul = input_conti[..., tf.newaxis, tf.newaxis] * nets_dict[
-        'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
-    lie_alg = tf.reduce_sum(lie_alg_mul, axis=1)  # [b, mat_dim, mat_dim]
-    lie_group_mat = tf.linalg.expm(lie_alg)  # [b, mat_dim, mat_dim]
-    return lie_alg, lie_group_mat
-
-
 def group_spl_decoder1_64(z,
                           scope="DEC",
                           n_act_points=10,
@@ -201,9 +176,31 @@ def group_spl_decoder1_64(z,
                     latents_in_cut_ls = split_latents(input_conti,
                                                       hy_ncut=1)  # [x0, x1]
 
+                    def train_fn(latents_in_cut_ls, nets_dict):
+                        lie_alg_mul_0 = latents_in_cut_ls[0][
+                            ..., tf.newaxis, tf.newaxis] * nets_dict[
+                                'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
+                        lie_alg_mul_1 = latents_in_cut_ls[1][
+                            ..., tf.newaxis, tf.newaxis] * nets_dict[
+                                'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
+                        lie_alg_0 = tf.reduce_sum(lie_alg_mul_0, axis=1)  # [b, mat_dim, mat_dim]
+                        lie_alg_1 = tf.reduce_sum(lie_alg_mul_1, axis=1)  # [b, mat_dim, mat_dim]
+                        lie_alg = lie_alg_0 + lie_alg_1
+                        lie_group_0 = tf.linalg.expm(lie_alg_0)  # [b, mat_dim, mat_dim]
+                        lie_group_1 = tf.linalg.expm(lie_alg_1)  # [b, mat_dim, mat_dim]
+                        lie_group_mat = tf.matmul(lie_group_0, lie_group_1)
+                        return lie_alg, lie_group_mat
+
+
+                    def val_fn(input_conti, nets_dict):
+                        lie_alg_mul = input_conti[..., tf.newaxis, tf.newaxis] * nets_dict[
+                            'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
+                        lie_alg = tf.reduce_sum(lie_alg_mul, axis=1)  # [b, mat_dim, mat_dim]
+                        lie_group_mat = tf.linalg.expm(lie_alg)  # [b, mat_dim, mat_dim]
+                        return lie_alg, lie_group_mat
+
                     nets_dict['lie_alg'], nets_dict['lie_group_mat'] = \
-                        tf.cond(is_train, train_fn(latents_in_cut_ls, nets_dict),
-                                val_fn(input_conti, nets_dict))
+                        tf.cond(is_train, train_fn, val_fn)
 
                     # if not is_train:
                     # lie_alg_mul = input_conti[
