@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Fri 02 Oct 2020 02:46:38 AEST
+# --- Last Modified: Fri 02 Oct 2020 02:48:07 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -176,7 +176,7 @@ def group_spl_decoder1_64(z,
                     latents_in_cut_ls = split_latents(input_conti,
                                                       hy_ncut=1)  # [x0, x1]
 
-                    def train_fn(latents_in_cut_ls, nets_dict):
+                    def train_fn():
                         lie_alg_mul_0 = latents_in_cut_ls[0][
                             ..., tf.newaxis, tf.newaxis] * nets_dict[
                                 'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
@@ -192,7 +192,7 @@ def group_spl_decoder1_64(z,
                         return lie_alg, lie_group_mat
 
 
-                    def val_fn(input_conti, nets_dict):
+                    def val_fn():
                         lie_alg_mul = input_conti[..., tf.newaxis, tf.newaxis] * nets_dict[
                             'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
                         lie_alg = tf.reduce_sum(lie_alg_mul, axis=1)  # [b, mat_dim, mat_dim]
