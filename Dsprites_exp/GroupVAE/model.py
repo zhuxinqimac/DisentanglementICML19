@@ -8,7 +8,7 @@
 
 # --- File Name: model.py
 # --- Creation Date: 23-09-2020
-# --- Last Modified: Thu 01 Oct 2020 01:51:59 AEST
+# --- Last Modified: Fri 02 Oct 2020 02:22:04 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -72,14 +72,17 @@ class Model(ModelPlugin):
         self.z_sample = tf.add(self.mean_total, tf.multiply(self.stddev_total, self.epsilon_input))
 
         self.z_sample_sum = self.z_sample[:self.args.nbatch // 2] + self.z_sample[self.args.nbatch // 2:]
-        z_sampled_split_ls = split_latents(self.z_sample, self.args.nbatch, hy_ncut=self.args.ncut)
-        self.z_sampled_split = tf.concat(z_sampled_split_ls, axis=0)
-        self.objective_split = tf.tile(self.objective, [len(z_sampled_split_ls), 1])
+        # z_sampled_split_ls = split_latents(self.z_sample, self.args.nbatch, hy_ncut=self.args.ncut)
+        # self.z_sampled_split = tf.concat(z_sampled_split_ls, axis=0)
+        # self.objective_split = tf.tile(self.objective, [len(z_sampled_split_ls), 1])
 
-        self.z_sample_all = tf.concat([self.z_sample, self.z_sample_sum, self.z_sampled_split], axis=0)
-        self.objective_all = tf.concat([self.objective, self.objective[:self.args.nbatch // 2], self.objective_split], axis=0)
+        # self.z_sample_all = tf.concat([self.z_sample, self.z_sample_sum, self.z_sampled_split], axis=0)
+        # self.objective_all = tf.concat([self.objective, self.objective[:self.args.nbatch // 2], self.objective_split], axis=0)
 
-        decode_dict = self.decoder_net(z=tf.concat([self.z_sample_all, self.objective_all], axis=-1), output_channel=self.nchannel, n_act_points=self.args.n_act_points, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=False)
+        self.z_sample_all = tf.concat([self.z_sample, self.z_sample_sum], axis=0)
+        self.objective_all = tf.concat([self.objective, self.objective[:self.args.nbatch // 2]], axis=0)
+
+        decode_dict = self.decoder_net(z=tf.concat([self.z_sample_all, self.objective_all], axis=-1), output_channel=self.nchannel, n_act_points=self.args.n_act_points, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=False, is_train=self.istrain)
         self.dec_output = decode_dict['output']
         self.dec_lie_group_mat = decode_dict['lie_group_mat']
         self.dec_lie_alg = decode_dict['lie_alg']
@@ -98,7 +101,7 @@ class Model(ModelPlugin):
 
         # Decode
         self.latent_ph = tf.placeholder(tf.float32, shape = [self.args.nbatch, self.args.nconti+self.args.ncat])
-        self.dec_output_ph = tf.nn.sigmoid(self.decoder_net(z=self.latent_ph, output_channel=self.nchannel, n_act_points=self.args.n_act_points, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=True)['output'])
+        self.dec_output_ph = tf.nn.sigmoid(self.decoder_net(z=self.latent_ph, output_channel=self.nchannel, n_act_points=self.args.n_act_points, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=True, is_train=self.istrain)['output'])
 
         self.logger.info("Model building ends")
 
@@ -107,20 +110,20 @@ class Model(ModelPlugin):
 
         group_feats_G_ori = group_feats_G[:nbatch]
         group_feats_G_sum = group_feats_G[nbatch:nbatch + nbatch // 2]
-        gfeats_G_split_ls = [
-            group_feats_G[(i + 1) * nbatch + nbatch // 2:
-                          (i + 2) * nbatch + nbatch // 2]
-            for i in range(self.args.ncut + 1)
-        ]
+        # gfeats_G_split_ls = [
+            # group_feats_G[(i + 1) * nbatch + nbatch // 2:
+                          # (i + 2) * nbatch + nbatch // 2]
+            # for i in range(self.args.ncut + 1)
+        # ]
 
         group_feats_G_mul = tf.matmul(
             group_feats_G[:nbatch // 2],
             group_feats_G[nbatch // 2:nbatch])
 
-        gfeats_G_split_mul = gfeats_G_split_ls[0]
-        for i in range(1, self.args.ncut + 1):
-            gfeats_G_split_mul = tf.matmul(gfeats_G_split_mul,
-                                           gfeats_G_split_ls[i])
+        # gfeats_G_split_mul = gfeats_G_split_ls[0]
+        # for i in range(1, self.args.ncut + 1):
+            # gfeats_G_split_mul = tf.matmul(gfeats_G_split_mul,
+                                           # gfeats_G_split_ls[i])
 
         lie_alg_basis_square = lie_alg_basis * lie_alg_basis
         # [1, lat_dim, mat_dim, mat_dim]
@@ -133,9 +136,9 @@ class Model(ModelPlugin):
         gmat_loss = tf.reduce_mean(
             tf.reduce_sum(tf.square(group_feats_G_mul - group_feats_G_sum),
                           axis=[1, 2]))
-        spl_loss = tf.reduce_mean(
-            tf.reduce_sum(tf.square(gfeats_G_split_mul - group_feats_G_ori),
-                          axis=[1, 2]))
+        # spl_loss = tf.reduce_mean(
+            # tf.reduce_sum(tf.square(gfeats_G_split_mul - group_feats_G_ori),
+                          # axis=[1, 2]))
         lin_loss = tf.reduce_mean(tf.reduce_sum(lie_alg_basis_square, axis=[2, 3]))
         if hessian_type == 'no_act_points':
             hessian_loss = tf.reduce_mean(
@@ -152,7 +155,8 @@ class Model(ModelPlugin):
         else:
             raise ValueError('Not recognized hessian_type:', hessian_type)
 
-        loss = self.args.gmat * gmat_loss * self.args.spl * spl_loss + self.args.hes * hessian_loss + self.args.lin * lin_loss
+        # loss = self.args.gmat * gmat_loss * self.args.spl * spl_loss + self.args.hes * hessian_loss + self.args.lin * lin_loss
+        loss = self.args.gmat * gmat_loss + self.args.hes * hessian_loss + self.args.lin * lin_loss
         return loss
 
     def decode(self, latent_input):

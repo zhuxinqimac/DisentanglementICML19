@@ -8,7 +8,7 @@
 
 # --- File Name: utils_fn.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Mon 21 Sep 2020 22:26:27 AEST
+# --- Last Modified: Fri 02 Oct 2020 02:19:42 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -19,9 +19,10 @@ import numpy as np
 import tensorflow as tf
 
 
-def split_latents(x, minibatch_size, hy_ncut=1):
+def split_latents(x, minibatch_size=1, hy_ncut=1):
     # x: [b, dim]
-    b = minibatch_size
+    # b = minibatch_size
+    b = tf.shape(x)[0]
     dim = x.get_shape().as_list()[1]
     split_idx = tf.random.uniform(shape=[b, hy_ncut],
                                   maxval=dim + 1,
