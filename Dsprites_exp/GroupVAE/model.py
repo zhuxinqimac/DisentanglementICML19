@@ -8,7 +8,7 @@
 
 # --- File Name: model.py
 # --- Creation Date: 23-09-2020
-# --- Last Modified: Fri 02 Oct 2020 03:23:00 AEST
+# --- Last Modified: Fri 02 Oct 2020 03:57:57 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -97,7 +97,7 @@ class Model(ModelPlugin):
 
         self.kl_cost = vae_kl_cost(mean=self.mean_total, stddev=self.stddev_total)
         self.lie_loss = self.calc_lie_loss(self.dec_lie_group_mat, self.dec_lie_alg, self.lie_alg_basis, self.act_points, self.args.hessian_type, self.args.nbatch)
-        self.loss = self.rec_cost + 0.1 * self.kl_cost + self.lie_loss
+        self.loss = self.rec_cost + self.kl_cost + self.lie_loss
 
         # Decode
         self.latent_ph = tf.placeholder(tf.float32, shape = [self.args.nbatch, self.args.nconti+self.args.ncat])
