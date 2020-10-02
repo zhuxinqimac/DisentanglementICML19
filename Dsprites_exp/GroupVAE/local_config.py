@@ -12,7 +12,7 @@ from config.parser import dsprites_parser
 KEY = 'GroupVAE'
 RESULT_DIR = ROOT+'{}/'.format(KEY)
 ID_STRUCTURE_DICT = {
-        'GroupVAE' : ('nbatch', 'nconti', 'ncat', 'group_feats_size', 'ntime', 'plamb',
+        'GroupVAE' : ('nbatch', 'nconti', 'ncat', 'group_feats_size', 'ntime', 'plamb', 'beta',
                       'gmat', 'spl', 'ncut', 'hes', 'lin', 'hessian_type', 'n_act_points', 'piter', 'rseed'),
         }
 ID_STRUCTURE = ID_STRUCTURE_DICT[KEY]
