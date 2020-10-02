@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Fri 02 Oct 2020 19:10:18 AEST
+# --- Last Modified: Fri 02 Oct 2020 23:41:40 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -133,6 +133,7 @@ def group_spl_decoder1_64(z,
                           n_act_points=10,
                           output_channel=1,
                           group_feats_size=400,
+                          lie_alg_init_type='none',
                           nconti=6,
                           ncat=3,
                           reuse=False,
@@ -161,9 +162,10 @@ def group_spl_decoder1_64(z,
                             'lie_alg_' + str(i),
                             shape=[1, mat_dim, mat_dim],
                             initializer=init)
-                        lie_alg_tmp = tf.matrix_band_part(lie_alg_tmp, 0, -1)
-                        lie_alg_tmp = lie_alg_tmp - tf.transpose(
-                            lie_alg_tmp, perm=[0, 2, 1])
+                        if lie_alg_init_type == 'oth':
+                            lie_alg_tmp = tf.matrix_band_part(lie_alg_tmp, 0, -1)
+                            lie_alg_tmp = lie_alg_tmp - tf.transpose(
+                                lie_alg_tmp, perm=[0, 2, 1])
                         lie_alg_basis_ls.append(lie_alg_tmp)
                     lie_alg_basis = tf.concat(
                         lie_alg_basis_ls,

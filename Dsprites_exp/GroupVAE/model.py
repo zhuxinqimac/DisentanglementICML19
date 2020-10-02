@@ -8,7 +8,7 @@
 
 # --- File Name: model.py
 # --- Creation Date: 23-09-2020
-# --- Last Modified: Fri 02 Oct 2020 19:10:33 AEST
+# --- Last Modified: Fri 02 Oct 2020 23:43:03 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -82,7 +82,7 @@ class Model(ModelPlugin):
         self.z_sample_all = tf.concat([self.z_sample, self.z_sample_sum], axis=0)
         self.objective_all = tf.concat([self.objective, self.objective[:self.args.nbatch // 2]], axis=0)
 
-        decode_dict = self.decoder_net(z=tf.concat([self.z_sample_all, self.objective_all], axis=-1), output_channel=self.nchannel, n_act_points=self.args.n_act_points, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=False, is_train=self.istrain)
+        decode_dict = self.decoder_net(z=tf.concat([self.z_sample_all, self.objective_all], axis=-1), output_channel=self.nchannel, n_act_points=self.args.n_act_points, lie_alg_init_type=self.args.lie_alg_init_type, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=False, is_train=self.istrain)
         self.dec_output = decode_dict['output']
         self.dec_lie_group_mat = decode_dict['lie_group_mat']
         self.dec_lie_alg = decode_dict['lie_alg']
@@ -101,7 +101,7 @@ class Model(ModelPlugin):
 
         # Decode
         self.latent_ph = tf.placeholder(tf.float32, shape = [self.args.nbatch, self.args.nconti+self.args.ncat])
-        self.dec_output_ph = tf.nn.sigmoid(self.decoder_net(z=self.latent_ph, output_channel=self.nchannel, n_act_points=self.args.n_act_points, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=True, is_train=self.istrain)['output'])
+        self.dec_output_ph = tf.nn.sigmoid(self.decoder_net(z=self.latent_ph, output_channel=self.nchannel, n_act_points=self.args.n_act_points, lie_alg_init_type=self.args.lie_alg_init_type, nconti=self.args.nconti, ncat=self.args.ncat, group_feats_size=self.args.group_feats_size, scope="decoder", reuse=True, is_train=self.istrain)['output'])
 
         self.logger.info("Model building ends")
 

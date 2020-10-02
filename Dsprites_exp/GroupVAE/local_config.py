@@ -23,6 +23,7 @@ def local_dsprites_parser():
     parser.add_argument("--plamb", default = 0.001, help="pairwise cost", type = float)
     parser.add_argument("--group_feats_size", default = 400, help="Group feats size of GroupVAE", type = int)
     parser.add_argument("--n_act_points", default = 10, help="n_act_points in GroupVAE", type = int)
+    parser.add_argument("--lie_alg_init_type", default = 'none', help="lie_alg_init_type for group net", type = str)
     parser.add_argument("--hessian_type", default = 'no_act_points', help="hessian type if using act_points", type = str)
     parser.add_argument("--beta", default = 1, help="Beta hyper of GroupVAE", type = float)
     parser.add_argument("--gmat", default = 0, help="Group mat mul hyper of GroupVAE", type = float)
