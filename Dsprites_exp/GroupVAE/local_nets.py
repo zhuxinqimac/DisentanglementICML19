@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Fri 02 Oct 2020 14:56:08 AEST
+# --- Last Modified: Fri 02 Oct 2020 19:10:18 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -241,11 +241,12 @@ def group_spl_decoder1_64(z,
                     # lie_group_tensor = tf.reshape(lie_group, [-1, mat_dim * mat_dim])
                     scale_cat = slim.fully_connected(
                         input_cat,
-                        1,
+                        mat_dim * mat_dim,
                         activation_fn=None,
                         scope='scale_cat')  # [b, mat_dim]
-                    scale_cat_alg = tf.eye(mat_dim, dtype=scale_cat.dtype)[tf.newaxis, ...] * \
-                        scale_cat[..., tf.newaxis] # [b, mat_dim, mat_dim]
+                    scale_cat_alg = tf.reshape(scale_cat, [-1, mat_dim, mat_dim])
+                    # scale_cat_alg = tf.eye(mat_dim, dtype=scale_cat.dtype)[tf.newaxis, ...] * \
+                        # scale_cat[..., tf.newaxis] # [b, mat_dim, mat_dim]
                     nets_dict['scale_group'] = tf.linalg.expm(
                         scale_cat_alg)  # [b, mat_dim, mat_dim]
                     # act_init = tf.initializers.random_normal(0, 0.01)

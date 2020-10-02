@@ -24,6 +24,7 @@ def local_dsprites_parser():
     parser.add_argument("--group_feats_size", default = 400, help="Group feats size of GroupVAE", type = int)
     parser.add_argument("--n_act_points", default = 10, help="n_act_points in GroupVAE", type = int)
     parser.add_argument("--hessian_type", default = 'no_act_points', help="hessian type if using act_points", type = str)
+    parser.add_argument("--beta", default = 1, help="Beta hyper of GroupVAE", type = float)
     parser.add_argument("--gmat", default = 0, help="Group mat mul hyper of GroupVAE", type = float)
     parser.add_argument("--hes", default = 0, help="Hessian hyper of GroupVAE", type = float)
     parser.add_argument("--lin", default = 0, help="Linear hyper of GroupVAE", type = float)
