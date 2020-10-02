@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Fri 02 Oct 2020 02:48:07 AEST
+# --- Last Modified: Fri 02 Oct 2020 14:24:57 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -241,7 +241,7 @@ def group_spl_decoder1_64(z,
                     # lie_group_tensor = tf.reshape(lie_group, [-1, mat_dim * mat_dim])
                     scale_cat = slim.fully_connected(
                         input_cat,
-                        mat_dim,
+                        1,
                         activation_fn=None,
                         scope='scale_cat')  # [b, mat_dim]
                     scale_cat_alg = tf.eye(mat_dim, dtype=scale_cat.dtype)[tf.newaxis, ...] * \
