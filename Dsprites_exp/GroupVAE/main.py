@@ -41,12 +41,12 @@ if __name__ == '__main__':
 
     model = Model(dm, LOG_DIR+FILE_ID+'.log', args)
 
-    print('SAVE_SUBDIR:', SAVE_SUBDIR)
-    if os.path.exists(os.path.join(SAVE_SUBDIR, 'checkpoint')):
-        print("Restoring %s"%SAVE_SUBDIR)
-        model.restore(save_dir=SAVE_SUBDIR)
-    else:
-        print("Not restoring.")
+    # print('SAVE_SUBDIR:', SAVE_SUBDIR)
+    # if os.path.exists(os.path.join(SAVE_SUBDIR, 'checkpoint')):
+        # print("Restoring %s"%SAVE_SUBDIR)
+        # model.restore(save_dir=SAVE_SUBDIR)
+    # else:
+        # print("Not restoring.")
 
     model.set_up_train()
     model.initialize()
