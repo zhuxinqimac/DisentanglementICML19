@@ -40,6 +40,11 @@ if __name__ == '__main__':
     dm.print_shape()
 
     model = Model(dm, LOG_DIR+FILE_ID+'.log', args)
+
+    if os.path.exists(os.path.join(SAVE_SUBDIR, 'model-*.index')):
+        print("Restoring %s"%SAVE_SUBDIR)
+        model.restore(save_dir=SAVE_SUBDIR)
+
     model.set_up_train()
     model.initialize()
     model.train(niter=NITER, siter=SITER, piter=PITER, save_dir=SAVE_SUBDIR, asset_dir=ASSET_SUBDIR)
