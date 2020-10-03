@@ -8,7 +8,7 @@
 
 # --- File Name: model.py
 # --- Creation Date: 23-09-2020
-# --- Last Modified: Fri 02 Oct 2020 23:43:03 AEST
+# --- Last Modified: Sat 03 Oct 2020 22:44:34 AEST
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -214,7 +214,8 @@ class Model(ModelPlugin):
         max_acc_iter = -1
 
         for iter_ in tqdm_range(self.start_iter, final_iter):
-            train_idx = (iter_ - self.start_iter)//piter
+            # train_idx = (iter_ - self.start_iter)//piter
+            train_idx = iter_ // piter
             self.run_batch(train_idx)
 
             if (iter_+1)%siter==0 or iter_+1==final_iter:
