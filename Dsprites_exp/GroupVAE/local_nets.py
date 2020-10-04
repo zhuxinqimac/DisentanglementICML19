@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Fri 02 Oct 2020 23:41:40 AEST
+# --- Last Modified: Sun 04 Oct 2020 21:24:18 AEDT
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -133,6 +133,7 @@ def group_spl_decoder1_64(z,
                           n_act_points=10,
                           output_channel=1,
                           group_feats_size=400,
+                          ncut=1,
                           lie_alg_init_type='none',
                           nconti=6,
                           ncat=3,
@@ -176,7 +177,7 @@ def group_spl_decoder1_64(z,
                     input_conti = nets_dict['input'][:, :nconti]
                     input_cat = nets_dict['input'][:, nconti:]
                     latents_in_cut_ls = split_latents(input_conti,
-                                                      hy_ncut=1)  # [x0, x1]
+                                                      hy_ncut=ncut)  # [x0, x1]
 
                     def train_fn():
                         lie_alg_mul_0 = latents_in_cut_ls[0][
