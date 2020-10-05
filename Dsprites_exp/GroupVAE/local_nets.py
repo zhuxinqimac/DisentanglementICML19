@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Mon 05 Oct 2020 15:28:34 AEDT
+# --- Last Modified: Mon 05 Oct 2020 15:47:49 AEDT
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -197,7 +197,7 @@ def group_spl_decoder1_64(z,
 
                         lie_group_mat = tf.eye(
                             mat_dim,
-                            dtype=latents_in_cut_ls[0].dtype)[tf.newaxis]
+                            dtype=latents_in_cut_ls[0].dtype)[tf.newaxis, ...]
                         lie_alg = 0
                         for latents_in_cut_i in latents_in_cut_ls:
                             lie_alg_mul_tmp = latents_in_cut_i[
