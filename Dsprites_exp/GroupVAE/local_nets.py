@@ -8,7 +8,7 @@
 
 # --- File Name: local_nets.py
 # --- Creation Date: 21-09-2020
-# --- Last Modified: Sun 04 Oct 2020 21:24:18 AEDT
+# --- Last Modified: Mon 05 Oct 2020 15:28:34 AEDT
 # --- Author: Xinqi Zhu
 # .<.<.<.<.<.<.<.<.<.<.<.<.<.<.<.<
 """
@@ -128,6 +128,7 @@ def group_decoder1_64(z,
                         scope='deconv2d_3')
                     return nets_dict
 
+
 def group_spl_decoder1_64(z,
                           scope="DEC",
                           n_act_points=10,
@@ -164,7 +165,8 @@ def group_spl_decoder1_64(z,
                             shape=[1, mat_dim, mat_dim],
                             initializer=init)
                         if lie_alg_init_type == 'oth':
-                            lie_alg_tmp = tf.matrix_band_part(lie_alg_tmp, 0, -1)
+                            lie_alg_tmp = tf.matrix_band_part(
+                                lie_alg_tmp, 0, -1)
                             lie_alg_tmp = lie_alg_tmp - tf.transpose(
                                 lie_alg_tmp, perm=[0, 2, 1])
                         lie_alg_basis_ls.append(lie_alg_tmp)
@@ -180,26 +182,46 @@ def group_spl_decoder1_64(z,
                                                       hy_ncut=ncut)  # [x0, x1]
 
                     def train_fn():
-                        lie_alg_mul_0 = latents_in_cut_ls[0][
-                            ..., tf.newaxis, tf.newaxis] * nets_dict[
-                                'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
-                        lie_alg_mul_1 = latents_in_cut_ls[1][
-                            ..., tf.newaxis, tf.newaxis] * nets_dict[
-                                'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
-                        lie_alg_0 = tf.reduce_sum(lie_alg_mul_0, axis=1)  # [b, mat_dim, mat_dim]
-                        lie_alg_1 = tf.reduce_sum(lie_alg_mul_1, axis=1)  # [b, mat_dim, mat_dim]
-                        lie_alg = lie_alg_0 + lie_alg_1
-                        lie_group_0 = tf.linalg.expm(lie_alg_0)  # [b, mat_dim, mat_dim]
-                        lie_group_1 = tf.linalg.expm(lie_alg_1)  # [b, mat_dim, mat_dim]
-                        lie_group_mat = tf.matmul(lie_group_0, lie_group_1)
+                        # lie_alg_mul_0 = latents_in_cut_ls[0][
+                        # ..., tf.newaxis, tf.newaxis] * nets_dict[
+                        # 'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
+                        # lie_alg_mul_1 = latents_in_cut_ls[1][
+                        # ..., tf.newaxis, tf.newaxis] * nets_dict[
+                        # 'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
+                        # lie_alg_0 = tf.reduce_sum(lie_alg_mul_0, axis=1)  # [b, mat_dim, mat_dim]
+                        # lie_alg_1 = tf.reduce_sum(lie_alg_mul_1, axis=1)  # [b, mat_dim, mat_dim]
+                        # lie_alg = lie_alg_0 + lie_alg_1
+                        # lie_group_0 = tf.linalg.expm(lie_alg_0)  # [b, mat_dim, mat_dim]
+                        # lie_group_1 = tf.linalg.expm(lie_alg_1)  # [b, mat_dim, mat_dim]
+                        # lie_group_mat = tf.matmul(lie_group_0, lie_group_1)
+
+                        lie_group_mat = tf.eye(
+                            mat_dim,
+                            dtype=latents_in_cut_ls[0].dtype)[tf.newaxis]
+                        lie_alg = 0
+                        for latents_in_cut_i in latents_in_cut_ls:
+                            lie_alg_mul_tmp = latents_in_cut_i[
+                                ..., tf.newaxis, tf.newaxis] * nets_dict[
+                                    'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
+                            lie_alg_tmp = tf.reduce_sum(
+                                lie_alg_mul_tmp,
+                                axis=1)  # [b, mat_dim, mat_dim]
+                            lie_alg = lie_alg + lie_alg_tmp
+                            lie_group_tmp = tf.linalg.expm(
+                                lie_alg_tmp)  # [b, mat_dim, mat_dim]
+                            lie_group_mat = tf.matmul(lie_group_mat,
+                                                      lie_group_tmp)
+
                         return lie_alg, lie_group_mat
 
-
                     def val_fn():
-                        lie_alg_mul = input_conti[..., tf.newaxis, tf.newaxis] * nets_dict[
-                            'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
-                        lie_alg = tf.reduce_sum(lie_alg_mul, axis=1)  # [b, mat_dim, mat_dim]
-                        lie_group_mat = tf.linalg.expm(lie_alg)  # [b, mat_dim, mat_dim]
+                        lie_alg_mul = input_conti[
+                            ..., tf.newaxis, tf.newaxis] * nets_dict[
+                                'lie_alg_basis']  # [b, lat_dim, mat_dim, mat_dim]
+                        lie_alg = tf.reduce_sum(
+                            lie_alg_mul, axis=1)  # [b, mat_dim, mat_dim]
+                        lie_group_mat = tf.linalg.expm(
+                            lie_alg)  # [b, mat_dim, mat_dim]
                         return lie_alg, lie_group_mat
 
                     nets_dict['lie_alg'], nets_dict['lie_group_mat'] = \
@@ -247,9 +269,10 @@ def group_spl_decoder1_64(z,
                         mat_dim * mat_dim,
                         activation_fn=None,
                         scope='scale_cat')  # [b, mat_dim]
-                    scale_cat_alg = tf.reshape(scale_cat, [-1, mat_dim, mat_dim])
+                    scale_cat_alg = tf.reshape(scale_cat,
+                                               [-1, mat_dim, mat_dim])
                     # scale_cat_alg = tf.eye(mat_dim, dtype=scale_cat.dtype)[tf.newaxis, ...] * \
-                        # scale_cat[..., tf.newaxis] # [b, mat_dim, mat_dim]
+                    # scale_cat[..., tf.newaxis] # [b, mat_dim, mat_dim]
                     nets_dict['scale_group'] = tf.linalg.expm(
                         scale_cat_alg)  # [b, mat_dim, mat_dim]
                     # act_init = tf.initializers.random_normal(0, 0.01)
@@ -265,7 +288,7 @@ def group_spl_decoder1_64(z,
                     # [-1, mat_dim * n_act_points])
                     # nets_dict['act_points_transed'] = transed_act_points_tensor
                     # nets_dict['act_points'] = tf.matmul(
-                        # nets_dict['lie_group_mat'], nets_dict['scale_group'])
+                    # nets_dict['lie_group_mat'], nets_dict['scale_group'])
                     nets_dict['act_points'] = tf.matmul(
                         nets_dict['scale_group'], nets_dict['lie_group_mat'])
                     nets_dict['act_points_transed'] = tf.reshape(
